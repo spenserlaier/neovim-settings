@@ -533,6 +533,12 @@ require('lazy').setup({
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+      vim.api.nvim_create_autocmd('CursorHold', {
+        callback = function()
+          vim.diagnostic.open_float(nil, { focusable = false })
+        end,
+      })
+
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -641,7 +647,14 @@ require('lazy').setup({
       -- See :help vim.diagnostic.Opts
       vim.diagnostic.config {
         severity_sort = true,
-        float = { border = 'rounded', source = 'if_many' },
+        float = {
+          border = 'rounded',
+          source = 'if_many',
+          max_width = 80, -- optional: control max width to help wrapping
+          max_height = 15, -- optional: control max height for float window
+          focusable = false, -- float not focusable by default
+          style = 'minimal',
+        },
         underline = { severity = vim.diagnostic.severity.ERROR },
         signs = vim.g.have_nerd_font and {
           text = {
@@ -651,19 +664,22 @@ require('lazy').setup({
             [vim.diagnostic.severity.HINT] = '󰌶 ',
           },
         } or {},
-        virtual_text = {
-          source = 'if_many',
-          spacing = 2,
-          format = function(diagnostic)
-            local diagnostic_message = {
-              [vim.diagnostic.severity.ERROR] = diagnostic.message,
-              [vim.diagnostic.severity.WARN] = diagnostic.message,
-              [vim.diagnostic.severity.INFO] = diagnostic.message,
-              [vim.diagnostic.severity.HINT] = diagnostic.message,
-            }
-            return diagnostic_message[diagnostic.severity]
-          end,
-        },
+        virtual_text = false,
+        -- disable virtual text-- otherwise, it shows error lines that get cut off
+        -- and are basically unreadable
+        --virtual_text = {
+        --  source = 'if_many',
+        --  spacing = 2,
+        --  format = function(diagnostic)
+        --    local diagnostic_message = {
+        --      [vim.diagnostic.severity.ERROR] = diagnostic.message,
+        --      [vim.diagnostic.severity.WARN] = diagnostic.message,
+        --      [vim.diagnostic.severity.INFO] = diagnostic.message,
+        --      [vim.diagnostic.severity.HINT] = diagnostic.message,
+        --    }
+        --    return diagnostic_message[diagnostic.severity]
+        --  end,
+        --},
       }
 
       -- LSP servers and clients are able to communicate to each other what features they support.
