@@ -1,6 +1,6 @@
 # Font
 # font_family FiraCode Nerd Font
-font_size 19.0
+font_size 14.0
 
 # Colors (optional, pick your favorite)
 # include ~/.config/kitty/dracula.conf
@@ -17,9 +17,3 @@ enable_ligatures yes
 # Window padding
 window_padding_width 10
 
-
-
-# BEGIN_KITTY_THEME
-# Cobalt Neon
-include current-theme.conf
-# END_KITTY_THEME
