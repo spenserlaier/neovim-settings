@@ -1081,10 +1081,11 @@ vim.keymap.set('n', '<C-S-N>', function()
   harpoon:list():next()
 end)
 local opts = { buffer = bufnr, silent = true }
+local builtin = require 'telescope.builtin'
 -- go to definition
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = 0, desc = 'Go to definition' })
--- go to references
-vim.keymap.set('n', 'gr', vim.lsp.buf.references, vim.tbl_extend('force', opts, { desc = 'Go to references' }))
+-- go to references (with telescope integration)
+vim.keymap.set('n', 'gr', builtin.lsp_references, vim.tbl_extend('force', opts, { desc = 'LSP References (Telescope)' }))
 -- Hover documentation
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, vim.tbl_extend('force', opts, { desc = 'Hover Documentation' }))
 
