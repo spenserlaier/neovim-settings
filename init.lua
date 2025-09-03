@@ -1080,6 +1080,14 @@ end)
 vim.keymap.set('n', '<C-S-N>', function()
   harpoon:list():next()
 end)
+local opts = { buffer = bufnr, silent = true }
+-- go to definition
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = 0, desc = 'Go to definition' })
+-- go to references
+vim.keymap.set('n', 'gr', vim.lsp.buf.references, vim.tbl_extend('force', opts, { desc = 'Go to references' }))
+-- Hover documentation
+vim.keymap.set('n', 'K', vim.lsp.buf.hover, vim.tbl_extend('force', opts, { desc = 'Hover Documentation' }))
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+--
