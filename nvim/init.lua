@@ -423,6 +423,13 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
+        defaults = {
+          layout_config = {
+            horizontal = {
+              preview_cutoff = 0,
+            },
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -1095,6 +1102,7 @@ local telescope_opts = {
       preview_width = 0.6, -- 60% of width is the preview
       prompt_position = 'top', -- show the prompt at the top
       mirror = false, -- do not mirror list and preview
+      preview_cutoff = 0,
     },
   },
   sorting_strategy = 'ascending', -- top-to-bottom
