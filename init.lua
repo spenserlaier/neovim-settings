@@ -1082,22 +1082,48 @@ vim.keymap.set('n', '<C-S-N>', function()
 end)
 local opts = { buffer = bufnr, silent = true }
 local builtin = require 'telescope.builtin'
+
+-- Telescope picker defaults
+local telescope_opts = {
+  jump_type = 'never', -- always show picker
+  layout_strategy = 'horizontal', -- horizontal layout puts list left, preview right
+  layout_config = {
+    horizontal = {
+      width = 0.95, -- picker + preview width
+      height = 0.85, -- total picker height
+      preview_width = 0.6, -- 60% of width is the preview
+      prompt_position = 'top', -- show the prompt at the top
+      mirror = false, -- do not mirror list and preview
+    },
+  },
+  sorting_strategy = 'ascending', -- top-to-bottom
+  path_display = { 'smart' }, -- shortened paths
+  show_line = true, -- show the code line in the list
+  previewer = true, -- enable preview window
+}
+
 -- go to definition
 vim.keymap.set('n', 'gd', function()
-  require('telescope.builtin').lsp_definitions { jump_type = 'never' }
-end, { buffer = bufnr, silent = true, desc = 'Go to Definition (Telescope)' })
--- go to references (with telescope integration)
-vim.keymap.set('n', 'gr', builtin.lsp_references, vim.tbl_extend('force', opts, { desc = 'LSP References (Telescope)' }))
+  builtin.lsp_definitions(telescope_opts)
+end, vim.tbl_extend('force', opts, { desc = 'Go to Definition (Telescope)' }))
+
+-- go to references
+vim.keymap.set('n', 'gr', function()
+  builtin.lsp_references(telescope_opts)
+end, vim.tbl_extend('force', opts, { desc = 'References (Telescope)' }))
+
 -- Hover documentation
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, vim.tbl_extend('force', opts, { desc = 'Hover Documentation' }))
+
 -- Implementations
 vim.keymap.set('n', 'gi', function()
-  require('telescope.builtin').lsp_implementations { jump_type = 'never' }
-end, { buffer = bufnr, silent = true, desc = 'LSP Implementations (Telescope)' })
+  builtin.lsp_implementations(telescope_opts)
+end, vim.tbl_extend('force', opts, { desc = 'Implementations (Telescope)' }))
+
 -- Type Definitions
 vim.keymap.set('n', 'gy', function()
-  require('telescope.builtin').lsp_type_definitions { jump_type = 'never' }
-end, { buffer = bufnr, silent = true, desc = 'LSP Type Definitions (Telescope)' })
+  builtin.lsp_type_definitions(telescope_opts)
+end, vim.tbl_extend('force', opts, { desc = 'Type Definitions (Telescope)' }))
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
