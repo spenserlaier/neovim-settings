@@ -17,3 +17,5 @@ ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
 
 echo "Dotfiles installed!"
 
+# TODO: add code for fish config
+
