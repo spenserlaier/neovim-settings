@@ -1437,5 +1437,9 @@ vim.api.nvim_create_autocmd('FileType', {
 vim.keymap.set('n', '<C-n>', ':cnext<CR>', { desc = 'Next Quickfix Item' })
 vim.keymap.set('n', '<C-p>', ':cprev<CR>', { desc = 'Prev Quickfix Item' })
 vim.keymap.set('n', "''", '<C-^>', { desc = 'Switch to alternate file' })
+-- Search inside visual selection using '/'
+-- <Esc> exits visual mode (updating the selection marks),
+-- then starts search (/) restricted to that area (\%V)
+vim.keymap.set('x', '/', '<Esc>/\\%V', { desc = 'Search within selection' })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
