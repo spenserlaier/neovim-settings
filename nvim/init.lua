@@ -1241,13 +1241,34 @@ local telescope_opts = {
 
 -- go to definition
 vim.keymap.set('n', 'gd', function()
-  builtin.lsp_definitions(telescope_opts)
-end, vim.tbl_extend('force', opts, { desc = 'Go to Definition (Telescope)' }))
+  local actions = require 'telescope.actions'
 
--- go to references
+  -- Merge your default opts with custom keymaps for this specific picker
+  builtin.lsp_definitions(vim.tbl_extend('force', telescope_opts, {
+    attach_mappings = function(_, map)
+      -- Overwrite <CR> (Enter) to use 'select_tab' instead of default
+      -- or, use actions.select_tab to open in a new tab instead of
+      -- a vertical split
+      map('i', '<CR>', actions.select_vertical)
+      map('n', '<CR>', actions.select_vertical)
+      return true -- Return true to keep default mappings (like <C-c> to close)
+    end,
+  }))
+end, { desc = 'Go to Definition (New Tab)' })
+
+-- go to references (Opens in VERTICAL SPLIT by default)
 vim.keymap.set('n', 'gr', function()
-  builtin.lsp_references(telescope_opts)
-end, vim.tbl_extend('force', opts, { desc = 'References (Telescope)' }))
+  local actions = require 'telescope.actions'
+
+  builtin.lsp_references(vim.tbl_extend('force', telescope_opts, {
+    attach_mappings = function(_, map)
+      -- Override Enter (<CR>) to use vertical split
+      map('i', '<CR>', actions.select_vertical)
+      map('n', '<CR>', actions.select_vertical)
+      return true
+    end,
+  }))
+end, vim.tbl_extend('force', opts, { desc = 'References (Vertical Split)' }))
 
 -- Hover documentation
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, vim.tbl_extend('force', opts, { desc = 'Hover Documentation' }))
