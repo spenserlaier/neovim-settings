@@ -1226,7 +1226,7 @@ require('lspconfig').pylsp.setup {
   root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
 
   on_new_config = function(new_config, new_root_dir)
-    -- 1. Locate the Project Python Binary
+    -- 1. Locate Project Python
     local cmd = 'python3 -c "import sys; print(sys.executable)"'
     local handle = io.popen(cmd)
     if not handle then
@@ -1237,60 +1237,59 @@ require('lspconfig').pylsp.setup {
 
     if python_bin then
       python_bin = vim.trim(python_bin)
-
-      -- Determine where 'pylsp' should be in this venv
       local pylsp_bin = python_bin:gsub('python3?$', 'pylsp')
 
-      -- 2. CHECK & AUTO-INSTALL
+      -- 2. CHECK: Do we need to install?
+      local needs_install = false
+
+      -- Check A: Is the binary missing?
       if vim.fn.executable(pylsp_bin) ~= 1 then
-        -- Notify the user that we are bootstrapping (like Mason does)
-        vim.notify('Pylsp missing in venv. Auto-installing...', vim.log.levels.WARN)
-
-        -- Run pip install in the background
-        -- We include [all] to get pyflakes, pycodestyle, etc automatically
-        local install_cmd = python_bin .. " -m pip install 'python-lsp-server[all]'"
-
-        -- Use jobstart to avoid freezing Neovim while installing
-        vim.fn.jobstart(install_cmd, {
-          on_exit = function(_, exit_code)
-            if exit_code == 0 then
-              vim.notify('Pylsp installed! Restarting LSP...', vim.log.levels.INFO)
-              -- Trigger a restart of the LSP client to pick up the new binary
-              vim.schedule(function()
-                vim.cmd 'LspRestart'
-              end)
-            else
-              vim.notify('Failed to auto-install Pylsp. Check terminal.', vim.log.levels.ERROR)
-            end
-          end,
-        })
-        -- Prevent the LSP from crashing while we wait for install
-        return
+        needs_install = true
+      else
+        -- Check B: Are the plugins (like pycodestyle) missing?
+        -- We use a list {} for system() to bypass Fish shell syntax completely
+        vim.fn.system { python_bin, '-c', 'import pycodestyle' }
+        if vim.v.shell_error ~= 0 then
+          needs_install = true
+        end
       end
 
-      -- 3. Configure the Server (Standard Native Setup)
-      new_config.cmd = { pylsp_bin }
+      -- 3. SYNCHRONOUS INSTALL (The Fix)
+      if needs_install then
+        vim.notify('Pylsp missing. Installing [all]... (Neovim will pause)', vim.log.levels.WARN)
 
-      vim.schedule(function()
-        -- vim.notify("Django Mode Active:\n" .. pylsp_bin, vim.log.levels.INFO)
-      end)
+        -- We use vim.fn.system() with a LIST.
+        -- This blocks Neovim until pip finishes.
+        -- This is Fish-safe and ensures the tool exists before we continue.
+        local result = vim.fn.system {
+          python_bin,
+          '-m',
+          'pip',
+          'install',
+          'python-lsp-server[all]',
+        }
+
+        if vim.v.shell_error ~= 0 then
+          vim.notify('Pip install failed:\n' .. result, vim.log.levels.ERROR)
+          return
+        end
+
+        vim.notify('Pylsp installed successfully.', vim.log.levels.INFO)
+      end
+
+      -- 4. Launch
+      -- Since we waited for the install above, this binary is GUARANTEED to exist now.
+      new_config.cmd = { pylsp_bin }
     end
   end,
 
   settings = {
     pylsp = {
       plugins = {
-        -- Now that we installed [all], these plugins definitely exist
-        pyflakes = { enabled = true }, -- Catches errors / undefined vars
-        pycodestyle = { enabled = true }, -- Disable style noise
-        mccabe = { enabled = true },
-
-        -- Jedi settings for Django 3.0
-        jedi_completion = {
-          enabled = true,
-          include_params = true,
-          fuzzy = true,
-        },
+        pyflakes = { enabled = true },
+        pycodestyle = { enabled = true },
+        mccabe = { enabled = false },
+        jedi_completion = { enabled = true, include_params = true, fuzzy = true },
         jedi_definition = { enabled = true },
       },
     },
