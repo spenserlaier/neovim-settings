@@ -261,6 +261,15 @@ require('lazy').setup({
   --
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
+  {
+    'andymass/vim-matchup',
+    event = 'BufReadPost', -- Load it lazily when you open a file
+    config = function()
+      -- Optional: Enables a popup showing the "start" of the block when you jump to the end
+      -- (Useful in Python so you know what function you are closing)
+      vim.g.matchup_matchparen_offscreen = { method = 'popup' }
+    end,
+  },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
@@ -1071,6 +1080,11 @@ require('lazy').setup({
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+      matchup = {
+        enable = true, -- Mandatory: Enables the Treesitter integration
+        enable_quotes = true, -- Optional: specific quote matching
+        include_match_words = true, -- Optional: helps with if/else/elif logic
+      },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
@@ -1107,6 +1121,33 @@ require('lazy').setup({
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
+  {
+    'nvim-treesitter/nvim-treesitter-context',
+    event = 'BufReadPre', -- Load immediately when opening a file
+    enabled = true,
+    opts = {
+      enable = true,
+      max_lines = 3, -- How many lines of context to show (e.g., Class > Function > Loop)
+      trim_scope = 'outer', -- If lines exceed max, trim from top
+      min_window_height = 0, -- Enable even in small windows
+
+      -- The z-index of the context window
+      zindex = 20,
+      -- 'gui' (popup style) or 'underline'
+      mode = 'cursor',
+      separator = nil,
+    },
+    -- Jump to the context header (Your "Jump to Outer Function" request!)
+    keys = {
+      {
+        '[c',
+        function()
+          require('treesitter-context').go_to_context(vim.v.count1)
+        end,
+        desc = 'Jump to upper context (function/class)',
+      },
+    },
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
