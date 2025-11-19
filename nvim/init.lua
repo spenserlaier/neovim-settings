@@ -1221,22 +1221,36 @@ local builtin = require 'telescope.builtin'
 
 -- Telescope picker defaults
 local telescope_opts = {
-  jump_type = 'never', -- always show picker
-  layout_strategy = 'horizontal', -- horizontal layout puts list left, preview right
+  jump_type = 'never',
+  layout_strategy = 'flex', -- 'flex' automatically switches to vertical if window is narrow
   layout_config = {
+    -- Default layout (Vertical split)
+    vertical = {
+      width = 0.9,
+      height = 0.95,
+      preview_height = 0.5, -- Preview takes 50% of height
+      mirror = true, -- List on top, Preview on bottom (or vice versa)
+    },
+    -- Alternative: True vertical (Side by side)
     horizontal = {
-      width = 0.95, -- picker + preview width
-      height = 0.85, -- total picker height
-      preview_width = 0.6, -- 60% of width is the preview
-      prompt_position = 'top', -- show the prompt at the top
-      mirror = false, -- do not mirror list and preview
-      preview_cutoff = 0,
+      width = 0.95,
+      height = 0.95,
+      preview_width = 0.60, -- Preview takes 60% width
     },
   },
-  sorting_strategy = 'ascending', -- top-to-bottom
-  path_display = { 'smart' }, -- shortened paths
-  show_line = true, -- show the code line in the list
-  previewer = true, -- enable preview window
+  -- FORCE VERTICAL LAYOUT ALWAYS:
+  layout_strategy = 'horizontal', -- Keep 'horizontal' strategy but tweak dimensions below
+  layout_config = {
+    horizontal = {
+      width = 0.95,
+      height = 0.95,
+      preview_width = 0.5,
+    },
+  },
+  sorting_strategy = 'ascending',
+  path_display = { 'smart' }, -- Smartly truncate start of path if too long
+  show_line = true,
+  previewer = true,
 }
 
 -- go to definition
@@ -1368,5 +1382,7 @@ require('lspconfig').pylsp.setup {
     },
   },
 }
+vim.keymap.set('n', '<C-n>', ':cnext<CR>', { desc = 'Next Quickfix Item' })
+vim.keymap.set('n', '<C-p>', ':cprev<CR>', { desc = 'Prev Quickfix Item' })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
