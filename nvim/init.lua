@@ -268,8 +268,8 @@ require('lazy').setup({
       -- Optional: Enables a popup showing the "start" of the block when you jump to the end
       -- (Useful in Python so you know what function you are closing)
       vim.g.matchup_matchparen_stopline = 40000
-      vim.g.matchup_matchparen_timeout = 5000
-      vim.g.matchup_motion_timeout = 5000
+      vim.g.matchup_matchparen_timeout = 50000
+      vim.g.matchup_motion_timeout = 50000
       vim.g.matchup_matchparen_deferred = 1
       vim.g.matchup_matchparen_offscreen = { method = 'popup' }
     end,
