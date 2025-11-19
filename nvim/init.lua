@@ -710,9 +710,9 @@ require('lazy').setup({
           settings = {},
         },
         -- gopls = {},
-        pyright = {
-          settings = {},
-        },
+        --pylsp = {
+        --  settings = {},
+        --},
         ts_ls = {
           filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
           settings = {},
@@ -1148,7 +1148,92 @@ end, vim.tbl_extend('force', opts, { desc = 'Implementations (Telescope)' }))
 vim.keymap.set('n', 'gy', function()
   builtin.lsp_type_definitions(telescope_opts)
 end, vim.tbl_extend('force', opts, { desc = 'Type Definitions (Telescope)' }))
+-- =============================================================================
+-- this script is necessary for proper django functionality with django 3.0.
+-- it allows pylsp to hook into the django project runtime and properly
+-- detect runtime definitions. when working with another project with
+-- django >= 5, we can just use pyright + django-stubs.
+-- django-stubs won't work with django 3.0 due to mismatches between
+-- the stubs themselves, and pyright's expectations for stub formats
+-- AUTOMATED NATIVE PYLSP SETUP
+-- 1. Finds project python
+-- 2. Auto-installs 'python-lsp-server[all]' if missing
+-- 3. Launches the server
+-- =============================================================================
+require('lspconfig').pylsp.setup {
+  capabilities = require('blink.cmp').get_lsp_capabilities(),
+  root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
 
+  on_new_config = function(new_config, new_root_dir)
+    -- 1. Locate the Project Python Binary
+    local cmd = 'python3 -c "import sys; print(sys.executable)"'
+    local handle = io.popen(cmd)
+    if not handle then
+      return
+    end
+    local python_bin = handle:read '*a'
+    handle:close()
+
+    if python_bin then
+      python_bin = vim.trim(python_bin)
+
+      -- Determine where 'pylsp' should be in this venv
+      local pylsp_bin = python_bin:gsub('python3?$', 'pylsp')
+
+      -- 2. CHECK & AUTO-INSTALL
+      if vim.fn.executable(pylsp_bin) ~= 1 then
+        -- Notify the user that we are bootstrapping (like Mason does)
+        vim.notify('Pylsp missing in venv. Auto-installing...', vim.log.levels.WARN)
+
+        -- Run pip install in the background
+        -- We include [all] to get pyflakes, pycodestyle, etc automatically
+        local install_cmd = python_bin .. " -m pip install 'python-lsp-server[all]'"
+
+        -- Use jobstart to avoid freezing Neovim while installing
+        vim.fn.jobstart(install_cmd, {
+          on_exit = function(_, exit_code)
+            if exit_code == 0 then
+              vim.notify('Pylsp installed! Restarting LSP...', vim.log.levels.INFO)
+              -- Trigger a restart of the LSP client to pick up the new binary
+              vim.schedule(function()
+                vim.cmd 'LspRestart'
+              end)
+            else
+              vim.notify('Failed to auto-install Pylsp. Check terminal.', vim.log.levels.ERROR)
+            end
+          end,
+        })
+        -- Prevent the LSP from crashing while we wait for install
+        return
+      end
+
+      -- 3. Configure the Server (Standard Native Setup)
+      new_config.cmd = { pylsp_bin }
+
+      vim.schedule(function()
+        -- vim.notify("Django Mode Active:\n" .. pylsp_bin, vim.log.levels.INFO)
+      end)
+    end
+  end,
+
+  settings = {
+    pylsp = {
+      plugins = {
+        -- Now that we installed [all], these plugins definitely exist
+        pyflakes = { enabled = true }, -- Catches errors / undefined vars
+        pycodestyle = { enabled = true }, -- Disable style noise
+        mccabe = { enabled = true },
+
+        -- Jedi settings for Django 3.0
+        jedi_completion = {
+          enabled = true,
+          include_params = true,
+          fuzzy = true,
+        },
+        jedi_definition = { enabled = true },
+      },
+    },
+  },
+}
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
---
