@@ -714,6 +714,7 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      --
       local servers = {
         clangd = {
           settings = {},
@@ -770,6 +771,20 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason-lspconfig').setup {
+        handlers = {
+          function(server_name)
+            local server = servers[server_name] or {}
+            -- Merge capabilities (blink.cmp)
+            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+
+            -- We handle pylsp manually below, so ignore it here to avoid conflicts
+            if server_name ~= 'pylsp' then
+              require('lspconfig')[server_name].setup(server)
+            end
+          end,
+        },
+      }
 
       require('lspconfig').pylsp.setup {
         capabilities = require('blink.cmp').get_lsp_capabilities(),
