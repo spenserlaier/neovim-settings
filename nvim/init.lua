@@ -1066,32 +1066,51 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
-    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+    main = 'nvim-treesitter.configs',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter-textobjects', -- <--- MUST BE HERE
+    },
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
-      -- Autoinstall languages that are not installed
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       auto_install = true,
       highlight = {
         enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+
+      -- 1. RESTORE THE % JUMPING
       matchup = {
-        enable = true, -- Mandatory: Enables the Treesitter integration
-        enable_quotes = true, -- Optional: specific quote matching
-        include_match_words = true, -- Optional: helps with if/else/elif logic
+        enable = true,
+      },
+
+      -- 2. ENABLE NAVIGATION SHORTCUTS (]f, [f, etc)
+      textobjects = {
+        select = {
+          enable = true,
+          lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
+          keymaps = {
+            -- You can use the capture groups defined in textobjects.scm
+            ['af'] = '@function.outer',
+            ['if'] = '@function.inner',
+            ['ac'] = '@class.outer',
+            ['ic'] = '@class.inner',
+          },
+        },
+        move = {
+          enable = true,
+          set_jumps = true, -- whether to set jumps in the jumplist
+          goto_next_start = {
+            [']f'] = '@function.outer',
+            [']c'] = '@class.outer',
+          },
+          goto_previous_start = {
+            ['[f'] = '@function.outer',
+            ['[c'] = '@class.outer',
+          },
+        },
       },
     },
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
@@ -1123,30 +1142,22 @@ require('lazy').setup({
   -- you can continue same window with `<space>sr` which resumes last telescope search
   {
     'nvim-treesitter/nvim-treesitter-context',
-    event = 'BufReadPre', -- Load immediately when opening a file
-    enabled = true,
+    event = 'BufReadPre',
     opts = {
       enable = true,
-      max_lines = 3, -- How many lines of context to show (e.g., Class > Function > Loop)
-      trim_scope = 'outer', -- If lines exceed max, trim from top
-      min_window_height = 0, -- Enable even in small windows
-
-      -- The z-index of the context window
-      zindex = 20,
-      -- 'gui' (popup style) or 'underline'
+      max_lines = 2,
+      trim_scope = 'outer',
       mode = 'cursor',
-      separator = nil,
     },
-    -- Jump to the context header (Your "Jump to Outer Function" request!)
-    keys = {
-      {
-        '[c',
-        function()
-          require('treesitter-context').go_to_context(vim.v.count1)
-        end,
-        desc = 'Jump to upper context (function/class)',
-      },
-    },
+    config = function(_, opts)
+      -- 1. Setup the plugin
+      require('treesitter-context').setup(opts)
+
+      -- 2. Manually set the keymap here to guarantee it registers
+      vim.keymap.set('n', '[u', function()
+        require('treesitter-context').go_to_context(vim.v.count1)
+      end, { desc = 'Jump Up to Context' })
+    end,
   },
 }, {
   ui = {
