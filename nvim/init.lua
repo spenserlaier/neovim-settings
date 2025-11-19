@@ -889,7 +889,7 @@ require('lazy').setup({
           return nil
         else
           return {
-            timeout_ms = 500,
+            timeout_ms = 2000, -- increased timeout to account for slower 'darker' formatting
             lsp_format = 'fallback',
           }
         end
@@ -897,6 +897,7 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         c = { 'clang_format' },
+        python = { 'darker' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -909,6 +910,10 @@ require('lazy').setup({
         clang_format = {
           command = 'clang-format',
           args = { '-style', '{IndentWidth: 4,TabWidth: 4,UseTab: Never}' },
+        },
+        darker = {
+          command = 'darker',
+          args = { '--stdout', '--stdin-filename', '$FILENAME', '-' },
         },
       },
     },
