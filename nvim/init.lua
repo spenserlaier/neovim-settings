@@ -1382,7 +1382,40 @@ require('lspconfig').pylsp.setup {
     },
   },
 }
+-- 1. Toggle Quickfix List with <leader>q
+vim.keymap.set('n', '<leader>q', function()
+  -- Check if any window is a quickfix window
+  local qf_open = false
+  for _, win in pairs(vim.fn.getwininfo()) do
+    if win.quickfix == 1 then
+      qf_open = true
+    end
+  end
+
+  if qf_open then
+    vim.cmd 'cclose'
+  else
+    vim.cmd 'copen'
+  end
+end, { desc = 'Toggle [Q]uickfix List' })
+
+-- 2. Make the Quickfix window behave nicely
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'qf',
+  callback = function(event)
+    -- Press 'q' inside the quickfix window to close it
+    vim.keymap.set('n', 'q', '<cmd>close<CR>', { buffer = event.buf, silent = true })
+
+    -- Allow 'Enter' to open the file but KEEP focus in Quickfix (so you can verify multiple)
+    -- remove the <C-w>p if you want it to jump to the file immediately
+    vim.keymap.set('n', '<CR>', '<CR><C-w>p', { buffer = event.buf })
+
+    -- Don't show quickfix in the buffer list
+    vim.opt_local.buflisted = false
+  end,
+})
 vim.keymap.set('n', '<C-n>', ':cnext<CR>', { desc = 'Next Quickfix Item' })
 vim.keymap.set('n', '<C-p>', ':cprev<CR>', { desc = 'Prev Quickfix Item' })
+vim.keymap.set('n', "''", '<C-^>', { desc = 'Switch to alternate file' })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
