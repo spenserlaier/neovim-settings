@@ -200,11 +200,11 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-
+--vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+--vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+--vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+--vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+--
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
@@ -1137,6 +1137,8 @@ require('lazy').setup({
     },
   },
 
+  { 'christoomey/vim-tmux-navigator' },
+
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -1209,29 +1211,30 @@ local wk = require 'which-key'
 
 local harpoon = require 'harpoon'
 
+-- Add file to Harpoon
 vim.keymap.set('n', '<leader>ha', function()
   harpoon:list():add()
-end, { desc = 'Harpoon: Add file' })
+end, { desc = 'Harpoon: [A]dd file' })
 
+-- Toggle Harpoon Menu
 vim.keymap.set('n', '<leader>hm', function()
   harpoon.ui:toggle_quick_menu(harpoon:list())
-end, { desc = 'Harpoon: Toggle menu' })
+end, { desc = 'Harpoon: [M]enu' })
 
-vim.keymap.set('n', '<C-h>', function()
+-- CONFLICT FIX: Use <leader>1..4 instead of <C-h/t/n/s>
+-- This restores your window navigation keys (<C-h/j/k/l>).
+vim.keymap.set('n', '<leader>1', function()
   harpoon:list():select(1)
-end, { desc = 'Harpoon: Jump to mark 1' })
-
-vim.keymap.set('n', '<C-t>', function()
+end, { desc = 'Harpoon: File 1' })
+vim.keymap.set('n', '<leader>2', function()
   harpoon:list():select(2)
-end, { desc = 'Harpoon: Jump to mark 2' })
-
-vim.keymap.set('n', '<C-n>', function()
+end, { desc = 'Harpoon: File 2' })
+vim.keymap.set('n', '<leader>3', function()
   harpoon:list():select(3)
-end, { desc = 'Harpoon: Jump to mark 3' })
-
-vim.keymap.set('n', '<C-s>', function()
+end, { desc = 'Harpoon: File 3' })
+vim.keymap.set('n', '<leader>4', function()
   harpoon:list():select(4)
-end, { desc = 'Harpoon: Jump to mark 4' })
+end, { desc = 'Harpoon: File 4' })
 
 -- Toggle previous & next buffers stored within Harpoon list
 vim.keymap.set('n', '<C-S-P>', function()
