@@ -1,89 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -437,8 +351,14 @@ require('lazy').setup({
         --   },
         -- },
         defaults = {
+          path_display = { 'smart' },
+          preview_title = true,
           layout_config = {
             horizontal = {
+              width = 0.99,
+              height = 0.98,
+              -- preview_width = 0.55, -- preview takes 55%
+              -- results_width = 0.45, -- results get more breathing room
               preview_cutoff = 0,
             },
           },
@@ -773,6 +693,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'debugpy',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
       require('mason-lspconfig').setup {
@@ -917,7 +838,7 @@ require('lazy').setup({
         },
         darker = {
           command = 'darker',
-          args = { '--stdout', '--stdin-filename', '$FILENAME', '-' },
+          args = { '--no-isort', '--stdout', '--stdin-filename', '$FILENAME', '-' },
         },
       },
     },
@@ -1021,6 +942,161 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
+
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+      'nvim-neotest/nvim-nio',
+    },
+    keys = {
+      {
+        '<leader>db',
+        function()
+          require('dap').toggle_breakpoint()
+        end,
+        desc = 'Debug: Toggle [B]reakpoint',
+      },
+      {
+        '<leader>dc',
+        function()
+          require('dap').continue()
+        end,
+        desc = 'Debug: Start/[C]ontinue',
+      },
+      {
+        '<leader>di',
+        function()
+          require('dap').step_into()
+        end,
+        desc = 'Debug: Step [I]nto',
+      },
+      {
+        '<leader>do',
+        function()
+          require('dap').step_over()
+        end,
+        desc = 'Debug: Step [O]ver',
+      },
+      {
+        '<leader>dt',
+        function()
+          require('dap').terminate()
+        end,
+        desc = 'Debug: [T]erminate',
+      },
+      {
+        '<leader>du',
+        function()
+          require('dapui').toggle()
+        end,
+        desc = 'Debug: Toggle [U]I',
+      },
+    },
+    config = function()
+      local dap = require 'dap'
+      local dapui = require 'dapui'
+
+      require('dapui').setup()
+
+      -- UI Hooks
+      dap.listeners.before.attach.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.launch.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated.dapui_config = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited.dapui_config = function()
+        dapui.close()
+      end
+
+      -- ======================================================================
+      -- NATIVE DEBUGGER SETUP (Auto-Install)
+      -- ======================================================================
+
+      -- 1. Find Project Python
+      local cmd = 'python3 -c "import sys; print(sys.executable)"'
+      local handle = io.popen(cmd)
+      if not handle then
+        return
+      end
+      local python_bin = handle:read '*a'
+      handle:close()
+
+      if python_bin then
+        python_bin = vim.trim(python_bin)
+
+        -- 2. Check & Install debugpy
+        -- Check if we can import debugpy in this environment
+        local check_cmd = python_bin .. ' -c "import debugpy"'
+
+        if vim.fn.system(check_cmd) == '' and vim.v.shell_error ~= 0 then
+          vim.notify('Debugpy missing in venv. Auto-installing...', vim.log.levels.WARN)
+          -- Synchronous install (blocks UI briefly) to ensure it works immediately
+          local result = vim.fn.system { python_bin, '-m', 'pip', 'install', 'debugpy' }
+          if vim.v.shell_error == 0 then
+            vim.notify('Debugpy installed!', vim.log.levels.INFO)
+          else
+            vim.notify('Debugpy install failed: ' .. result, vim.log.levels.ERROR)
+          end
+        end
+
+        -- 3. Define the Adapter (NATIVE)
+        -- Instead of using Mason's adapter, we run: python -m debugpy.adapter
+        dap.adapters.python = {
+          type = 'executable',
+          command = python_bin,
+          args = { '-m', 'debugpy.adapter' },
+        }
+
+        -- 4. Define the Configuration
+        dap.configurations.python = {
+          {
+            type = 'python',
+            request = 'launch',
+            name = 'Django (Native)',
+            program = vim.fn.getcwd() .. '/manage.py',
+            args = { 'runserver', '--noreload' },
+            django = true,
+            console = 'integratedTerminal',
+
+            -- This ensures the launched process ALSO uses the project python
+            pythonPath = python_bin,
+          },
+        }
+      end
+    end,
+  },
+
+  {
+    'danymat/neogen',
+    config = true,
+    keys = {
+      {
+        '<leader>nf',
+        function()
+          -- This generates the docstring based on the function signature
+          require('neogen').generate()
+        end,
+        desc = '[N]eogen: Generate [F]unction Docstring',
+      },
+    },
+    -- Optional: Configure style (default is Google style for Python)
+    opts = {
+      snippet_engine = 'luasnip',
+      languages = {
+        python = {
+          template = {
+            annotation_convention = 'numpydoc', -- or "google_docstrings", "sphinx"
+          },
+        },
+      },
+    },
+  },
+
   {
     'folke/tokyonight.nvim',
   },
