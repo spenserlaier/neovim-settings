@@ -1,0 +1,9 @@
+[tools]
+fzf = "latest"
+fd = "latest"
+ripgrep = "latest"
+bat = "latest"
+zoxide = "latest"
+neovim = "latest"
+tmux = "latest"
+
