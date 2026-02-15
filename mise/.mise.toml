@@ -7,5 +7,5 @@ zoxide = "latest"
 neovim = "latest"
 tmux = "latest"
 atuin = "latest"
-starship = "lastest"
+starship = "latest"
 
