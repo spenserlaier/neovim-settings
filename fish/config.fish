@@ -7,5 +7,6 @@ atuin init fish --disable-up-arrow | source
 zoxide init fish | source
 # make 'cd' behave like z
 alias cd="z"
-bind \t _atuin_search
+# bind atuin search to jj
+bind -M insert \t _atuin_search
 end

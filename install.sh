@@ -23,8 +23,11 @@ ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
 mkdir -p ~/.config/fish
 #ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish
 # The line below symlinks the whole fish directory, which also installs functions
-# (be sure to avoid nesting issues)
-ln -sf "$DOTFILES/fish" ~/.config/fish
+# avoid nesting issues by removing existing dir 
+if [ -e ~/.config/fish ]; then
+  rm -rf ~/.config/fish
+fi
+ln -s "$DOTFILES/fish" ~/.config/fish
 # Mise
 ln -sf "$DOTFILES/mise/.mise.toml" ~/.mise.toml
 mise install
