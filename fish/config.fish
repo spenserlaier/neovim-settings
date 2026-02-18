@@ -7,6 +7,14 @@ atuin init fish --disable-up-arrow | source
 zoxide init fish | source
 # make 'cd' behave like z
 alias cd="z"
-# bind atuin search to jj
-bind -M insert \t _atuin_search
+function atuin_or_complete
+    set cmd (commandline -b)
+    if test -z "$cmd"
+        _atuin_search
+    else
+        commandline -f complete
+    end
+end
+
+bind -M insert \t atuin_or_complete
 end
