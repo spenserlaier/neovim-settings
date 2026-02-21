@@ -12,6 +12,9 @@ DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p ~/.config
 ln -sf "$DOTFILES/nvim" ~/.config/nvim
 
+# Create the directory neovim uses to store undo information persistently
+mkdir -p ~/.local/state/nvim/undo
+
 # Kitty
 mkdir -p ~/.config/kitty
 ln -sf "$DOTFILES/kitty/kitty.conf" ~/.config/kitty/kitty.conf
