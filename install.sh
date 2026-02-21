@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
+export PATH="$HOME/.local/bin:$PATH"  # ensure current shell sees it
 if ! command -v mise >/dev/null; then
   curl https://mise.run | sh
-  export PATH="$HOME/.local/bin:$PATH"  # ensure current shell sees it
 fi
 
 # Get the directory of this script, even if called from elsewhere
