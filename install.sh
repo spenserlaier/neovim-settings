@@ -19,6 +19,10 @@ ln -sf "$DOTFILES/kitty/kitty.conf" ~/.config/kitty/kitty.conf
 # Tmux
 ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
 
+# Atuin
+mkdir -p ~/.config/atuin
+ln -sf "$DOTFILES/atuin/config.toml" ~/.config/atuin/config.toml
+
 # Fish
 mkdir -p ~/.config/fish
 #ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish
