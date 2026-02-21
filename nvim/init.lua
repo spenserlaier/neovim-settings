@@ -1416,7 +1416,7 @@ require('lspconfig').pylsp.setup {
   root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
 
   on_new_config = function(new_config, new_root_dir)
-    -- 1. Locate Project Python
+    -- 1. Locate the Project Python Binary
     local cmd = 'python3 -c "import sys; print(sys.executable)"'
     local handle = io.popen(cmd)
     if not handle then
@@ -1429,46 +1429,45 @@ require('lspconfig').pylsp.setup {
       python_bin = vim.trim(python_bin)
       local pylsp_bin = python_bin:gsub('python3?$', 'pylsp')
 
-      -- 2. CHECK: Do we need to install?
-      local needs_install = false
+      -- 2. ROBUST CHECK: Verify Pylsp AND Pycodestyle (plugin) exist
+      local check_cmd = python_bin .. " -c \"import shutil, sys, pycodestyle; sys.exit(0 if shutil.which('pylsp') and sys.modules['pycodestyle'] else 1)\""
 
-      -- Check A: Is the binary missing?
-      if vim.fn.executable(pylsp_bin) ~= 1 then
-        needs_install = true
-      else
-        -- Check B: Are the plugins (like pycodestyle) missing?
-        -- We use a list {} for system() to bypass Fish shell syntax completely
-        vim.fn.system { python_bin, '-c', 'import pycodestyle' }
-        if vim.v.shell_error ~= 0 then
-          needs_install = true
+      -- If the check command fails (exit code 1), we need to install/upgrade
+      if vim.fn.system(check_cmd) == '' and vim.v.shell_error ~= 0 then
+        -- NEW: Safety check for an active virtual environment
+        if not vim.env.VIRTUAL_ENV then
+          vim.notify(
+            'No virtual environment detected! Skipping pylsp auto-install to protect system Python. Please activate a venv and restart Neovim.',
+            vim.log.levels.WARN
+          )
+          return -- Abort the install process safely
         end
-      end
 
-      -- 3. SYNCHRONOUS INSTALL (The Fix)
-      if needs_install then
-        vim.notify('Pylsp missing. Installing [all]... (Neovim will pause)', vim.log.levels.WARN)
+        vim.notify('Pylsp or Plugins missing in venv. Auto-installing...', vim.log.levels.INFO)
 
-        -- We use vim.fn.system() with a LIST.
-        -- This blocks Neovim until pip finishes.
-        -- This is Fish-safe and ensures the tool exists before we continue.
-        local result = vim.fn.system {
+        -- 3. AUTO-INSTALL
+        vim.fn.jobstart({
           python_bin,
           '-m',
           'pip',
           'install',
           'python-lsp-server[all]',
-        }
-
-        if vim.v.shell_error ~= 0 then
-          vim.notify('Pip install failed:\n' .. result, vim.log.levels.ERROR)
-          return
-        end
-
-        vim.notify('Pylsp installed successfully.', vim.log.levels.INFO)
+        }, {
+          on_exit = function(_, exit_code)
+            if exit_code == 0 then
+              vim.notify('Pylsp & Plugins installed! Restarting...', vim.log.levels.INFO)
+              vim.schedule(function()
+                vim.cmd 'LspRestart'
+              end)
+            else
+              vim.notify('Install failed. Check :messages', vim.log.levels.ERROR)
+            end
+          end,
+        })
+        return
       end
 
-      -- 4. Launch
-      -- Since we waited for the install above, this binary is GUARANTEED to exist now.
+      -- 4. Configure the Server
       new_config.cmd = { pylsp_bin }
     end
   end,
