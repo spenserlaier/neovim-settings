@@ -1525,3 +1525,24 @@ vim.keymap.set('n', "''", '<C-^>', { desc = 'Switch to alternate file' })
 vim.keymap.set('x', '/', '<Esc>/\\%V', { desc = 'Search within selection' })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+-- Prevent `sudo nvim` from breaking undo files on macos
+local undodir
+
+-- check if we are running as root (via sudo)
+if vim.env.USER == 'root' or vim.env.SUDO_USER then
+  -- route root's undo files to the mac root user's actual home directory
+  undodir = '/var/root/.local/state/nvim/undo'
+else
+  -- standard user undo directory
+  undodir = vim.fn.expand '~/.local/state/nvim/undo'
+end
+
+-- create the directory automatically if it doesn't exist
+if vim.fn.isdirectory(undodir) == 0 then
+  vim.fn.mkdir(undodir, 'p')
+end
+
+-- enable persistent undo and point it to the correct path
+vim.opt.undodir = undodir
+vim.opt.undofile = true
