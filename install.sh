@@ -10,7 +10,7 @@ DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Neovim
 mkdir -p ~/.config
-ln -sfnT "$DOTFILES/nvim" ~/.config/nvim
+ln -sfn "$DOTFILES/nvim" ~/.config/nvim
 
 # Create the directory neovim uses to store undo information persistently
 mkdir -p ~/.local/state/nvim/undo
@@ -26,6 +26,9 @@ ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
 mkdir -p ~/.config/atuin
 ln -sf "$DOTFILES/atuin/config.toml" ~/.config/atuin/config.toml
 
+# Ranger
+rm -rf ~/.config/ranger
+ln -sfn "$DOTFILES/ranger" ~/.config/ranger
 # Fish
 mkdir -p ~/.config/fish
 #ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish
