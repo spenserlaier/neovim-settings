@@ -5,9 +5,25 @@ if ! command -v mise >/dev/null; then
   curl https://mise.run | sh
 fi
 
+# Install homebrew if necessary (installs additional software not available with mise)
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Installing Homebrew..."
+
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # Add brew to PATH immediately
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  else
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
+fi
+
 # Get the directory of this script, even if called from elsewhere
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Install additional software via Brewfile
+brew bundle --file="$DOTFILES/Brewfile"
 # Neovim
 mkdir -p ~/.config
 ln -sfn "$DOTFILES/nvim" ~/.config/nvim

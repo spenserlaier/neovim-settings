@@ -8,5 +8,3 @@ neovim = "latest"
 tmux = "latest"
 atuin = "latest"
 starship = "latest"
-# TODO: figure out how to get automatic agnostic ranger file manager install
-# TODO: figure out how to get automatic agnostic kitty terminal install
