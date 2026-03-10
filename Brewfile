@@ -4,3 +4,5 @@ cask "kitty"
 brew "ranger"
 # neovim
 brew "neovim"
+# eza (ls replacement)
+brew "eza"

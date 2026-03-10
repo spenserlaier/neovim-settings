@@ -31,9 +31,6 @@ ln -sfn "$DOTFILES/nvim" ~/.config/nvim
 # Create the directory neovim uses to store undo information persistently
 mkdir -p ~/.local/state/nvim/undo
 
-# Kitty
-mkdir -p ~/.config/kitty
-ln -sf "$DOTFILES/kitty/kitty.conf" ~/.config/kitty/kitty.conf
 
 # Tmux
 ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
@@ -45,6 +42,10 @@ ln -sf "$DOTFILES/atuin/config.toml" ~/.config/atuin/config.toml
 # Ranger
 rm -rf ~/.config/ranger
 ln -sfn "$DOTFILES/ranger" ~/.config/ranger
+
+# Kitty
+rm -rf ~/.config/kitty
+ln -sfn "$DOTFILES/kitty" ~/.config/kitty
 # Fish
 mkdir -p ~/.config/fish
 #ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish

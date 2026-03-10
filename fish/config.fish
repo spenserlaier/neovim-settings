@@ -16,6 +16,7 @@ atuin init fish --disable-up-arrow | source
 zoxide init fish | source
 # make 'cd' behave like z
 alias cd="z"
+alias ls="eza --hyperlink"
 function atuin_or_complete
     set cmd (commandline -b)
     if test -z "$cmd"
