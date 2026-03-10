@@ -58,6 +58,25 @@ ln -s "$DOTFILES/fish" ~/.config/fish
 # Mise
 ln -sf "$DOTFILES/mise/.mise.toml" ~/.mise.toml
 mise install
+# Git
+GITCONFIG_SOURCE="$DOTFILES/git/.gitconfig"
+GITCONFIG_DEST="$HOME/.gitconfig"
+
+# Ensure source exists
+if [ ! -f "$GITCONFIG_SOURCE" ]; then
+  echo "Error: expected gitconfig at $GITCONFIG_SOURCE"
+  exit 1
+fi
+
+# Backup existing gitconfig if it isn't already a symlink
+if [ -e "$GITCONFIG_DEST" ] && [ ! -L "$GITCONFIG_DEST" ]; then
+  BACKUP_PATH="$GITCONFIG_DEST.$(date +%Y%m%d%H%M%S).bak"
+  echo "Backing up existing gitconfig → $BACKUP_PATH"
+  mv "$GITCONFIG_DEST" "$BACKUP_PATH"
+fi
+
+# Create/update symlink
+ln -sf "$GITCONFIG_SOURCE" "$GITCONFIG_DEST"
 
 echo "Dotfiles and tools installed!"
 
