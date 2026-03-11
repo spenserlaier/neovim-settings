@@ -1,5 +1,7 @@
 # terminal
 cask "kitty"
+cask "font-fira-code-nerd-font"
+cask "font-caskaydia-cove-nerd-font"
 # ranger file manager
 brew "ranger"
 # neovim
