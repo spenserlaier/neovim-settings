@@ -186,6 +186,7 @@ require('lazy').setup({
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
   'https://github.com/stevearc/oil.nvim',
+  'https://github.com/flazz/vim-colorschemes',
   {
     'andymass/vim-matchup',
     event = 'BufReadPost', -- Load it lazily when you open a file
