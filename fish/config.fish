@@ -18,7 +18,7 @@ zoxide init fish | source
 alias cd="z"
 alias cat="bat"
 function ls
-    command eza --hyperlink $argv
+    command eza --hyperlink --icons $argv
 end
 function atuin_or_complete
     set cmd (commandline -b)
