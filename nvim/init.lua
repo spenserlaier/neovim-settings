@@ -37,6 +37,10 @@ vim.o.mouse = 'a'
 -- Don't show the mode, since it's already in the status line
 vim.o.showmode = false
 
+-- Disable netrw (to use Oil instead)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -181,6 +185,7 @@ require('lazy').setup({
   --
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
+  'https://github.com/stevearc/oil.nvim',
   {
     'andymass/vim-matchup',
     event = 'BufReadPost', -- Load it lazily when you open a file
@@ -1496,6 +1501,10 @@ require('lspconfig').pylsp.setup {
     },
   },
 }
+
+-- Setup oil
+require('oil').setup()
+vim.api.nvim_create_user_command('E', 'Oil', {})
 -- 1. Toggle Quickfix List with <leader>q
 vim.keymap.set('n', '<leader>q', function()
   -- Check if any window is a quickfix window
