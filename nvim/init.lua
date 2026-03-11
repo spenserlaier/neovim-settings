@@ -1570,4 +1570,4 @@ vim.opt.undodir = undodir
 vim.opt.undofile = true
 
 -- Ensure papercolor is applied last
-vim.cmd.colorscheme 'papercolor'
+vim.cmd.colorscheme 'gruvbox'
