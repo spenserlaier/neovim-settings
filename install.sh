@@ -42,7 +42,8 @@ ln -sf "$DOTFILES/atuin/config.toml" ~/.config/atuin/config.toml
 # Ranger
 rm -rf ~/.config/ranger
 ln -sfn "$DOTFILES/ranger" ~/.config/ranger
-
+# Starship
+ln -sfn "$DOTFILES/starship/starship.toml" ~/.config/starship.toml
 # Kitty
 rm -rf ~/.config/kitty
 ln -sfn "$DOTFILES/kitty" ~/.config/kitty

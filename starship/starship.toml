@@ -1,0 +1,43 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+[battery]
+full_symbol = "• "
+charging_symbol = "⇡ "
+discharging_symbol = "⇣ "
+unknown_symbol = "❓ "
+empty_symbol = "❗ "
+
+[erlang]
+symbol = "ⓔ "
+
+[fortran]
+symbol = "F "
+
+[nodejs]
+symbol = "[⬢](bold green) "
+
+[pulumi]
+symbol = "🧊 "
+
+[typst]
+symbol = "t "
+[git_branch]
+symbol = " "
+format = "[$symbol$branch]($style) "
+
+[git_status]
+format = "([$all_status$ahead_behind]($style)) "
+
+# File status
+staged = " ${count}"        # added to index
+modified = " ${count}"      # modified
+deleted = " ${count}"       # deleted
+renamed = " ${count}"       # renamed
+untracked = " ${count}"     # untracked
+conflicted = " ${count}"    # merge conflict
+stashed = " ${count}"       # stash
+
+# Branch relationship
+ahead = " ${count}"
+behind = " ${count}"
+diverged = " ${ahead_count}  ${behind_count}"
