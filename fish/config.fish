@@ -17,7 +17,9 @@ zoxide init fish | source
 # make 'cd' behave like z
 alias cd="z"
 alias cat="bat"
-alias ls="eza --hyperlink"
+function ls
+    command eza --hyperlink $argv
+end
 function atuin_or_complete
     set cmd (commandline -b)
     if test -z "$cmd"
