@@ -363,7 +363,9 @@ require('lazy').setup({
             },
           },
         },
-        -- pickers = {}
+        pickers = { colorscheme = {
+          enable_preview = true,
+        } },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -1119,7 +1121,7 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'sorbet'
     end,
   },
 
@@ -1242,6 +1244,28 @@ require('lazy').setup({
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
+  {
+    'zaldih/themery.nvim',
+    cmd = 'Themery',
+    dependencies = {
+      { 'folke/tokyonight.nvim', lazy = false },
+      { 'catppuccin/nvim', name = 'catppuccin', lazy = false },
+      { 'ellisonleao/gruvbox.nvim', lazy = false },
+      { 'EdenEast/nightfox.nvim', lazy = false },
+      { 'rebelot/kanagawa.nvim', lazy = false },
+      { 'navarasu/onedark.nvim', lazy = false },
+      { 'Mofiqul/dracula.nvim', lazy = false },
+      { 'shaunsingh/nord.nvim', lazy = false },
+      { 'audibleblink/hackthebox.vim', lazy = false },
+    },
+    config = function()
+      require('themery').setup {
+        themes = vim.fn.getcompletion('', 'color'),
+        livePreview = true,
+        themeConfigFile = '~/.config/nvim/lua/theme.lua',
+      }
+    end,
+  },
   {
     'nvim-treesitter/nvim-treesitter-context',
     event = 'BufReadPre',
@@ -1546,3 +1570,5 @@ end
 -- enable persistent undo and point it to the correct path
 vim.opt.undodir = undodir
 vim.opt.undofile = true
+-- enable true color
+vim.opt.termguicolors = true
