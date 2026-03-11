@@ -1109,6 +1109,7 @@ require('lazy').setup({
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
     --'folke/tokyonight.nvim',
     'https://github.com/Mofiqul/dracula.nvim',
+    'https://github.com/NLKNguyen/papercolor-theme',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
       ---@diagnostic disable-next-line: missing-fields
@@ -1262,7 +1263,6 @@ require('lazy').setup({
       require('themery').setup {
         themes = vim.fn.getcompletion('', 'color'),
         livePreview = true,
-        themeConfigFile = '~/.config/nvim/lua/theme.lua',
       }
     end,
   },
