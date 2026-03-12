@@ -28,6 +28,9 @@ function atuin_or_complete
         commandline -f complete
     end
 end
+if type -q xcrun
+    set -gx SDKROOT (xcrun --show-sdk-path)
+end
 
 bind -M insert \t atuin_or_complete
 end
