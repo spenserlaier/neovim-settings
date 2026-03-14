@@ -47,6 +47,9 @@ ln -sfn "$DOTFILES/starship/starship.toml" ~/.config/starship.toml
 # Kitty
 rm -rf ~/.config/kitty
 ln -sfn "$DOTFILES/kitty" ~/.config/kitty
+# Miniflux
+rm -rf ~/.config/miniflux
+ln -sfn "$DOTFILES/miniflux" ~/.config/miniflux
 # Fish
 mkdir -p ~/.config/fish
 #ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish
