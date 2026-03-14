@@ -8,6 +8,14 @@ brew "ranger"
 brew "neovim"
 # eza (ls replacement)
 brew "eza"
+# tree (view hierarchical file structure)
+brew "tree"
+# miniflux (rss reader)
+brew "miniflux"
+# java
+brew "java"
+# postgres
+brew "postgresql@18"
 # git pager replacement- remember to add to default in ~/.gitconfig:
 #   4 │ [core]
 #   5 │     pager = delta
