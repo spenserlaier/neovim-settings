@@ -2,15 +2,63 @@
 set -euo pipefail
 
 # -----------------------
-# Configuration
+# Load environment variables from .env if it exists
 # -----------------------
-DB_ROLE="miniflux"
-DB_PASS="miniflux"
-DB_NAME="miniflux"
-ADMIN_USER=""
-ADMIN_PASS=""   # change as needed
-CONFIG_FILE="$HOME/.config/miniflux/config.env"
-LISTEN_ADDR="127.0.0.1:8080"
+ENV_FILE="$(dirname "$0")/.env"
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+fi
+
+# -----------------------
+# Configuration (with defaults)
+# -----------------------
+DB_ROLE="${DB_ROLE:-miniflux}"
+DB_NAME="${DB_NAME:-miniflux}"
+LISTEN_ADDR="${LISTEN_ADDR:-127.0.0.1:8080}"
+CONFIG_DIR="$HOME/.config/miniflux"
+CONFIG_FILE="$CONFIG_DIR/config.env"
+TEMPLATE_FILE="$(dirname "$0")/miniflux/config.env.example"
+
+# -----------------------
+# Ensure secrets are set (prompt if missing)
+# -----------------------
+prompt_if_empty() {
+    local var_name="$1"
+    local prompt_text="$2"
+    local is_password="${3:-false}"
+
+    if [[ -z "${!var_name:-}" ]]; then
+        if [[ "$is_password" == "true" ]]; then
+            read -rs -p "$prompt_text: " value
+            echo "" >&2
+        else
+            read -r -p "$prompt_text: " value
+        fi
+        export "$var_name"="$value"
+        # Save to .env for future runs (only if not already there)
+        if ! grep -q "^$var_name=" "$ENV_FILE" 2>/dev/null; then
+            echo "$var_name=\"$value\"" >> "$ENV_FILE"
+        fi
+    fi
+}
+
+mkdir -p "$CONFIG_DIR"
+touch "$ENV_FILE"
+
+prompt_if_empty "DB_PASS" "Enter Database Password (for role $DB_ROLE)" true
+prompt_if_empty "ADMIN_USERNAME" "Enter Miniflux Admin Username"
+prompt_if_empty "ADMIN_PASSWORD" "Enter Miniflux Admin Password" true
+
+# Export for envsubst
+export DB_ROLE DB_PASS DB_NAME LISTEN_ADDR ADMIN_USERNAME ADMIN_PASSWORD
+
+# -----------------------
+# Generate configuration file from template
+# -----------------------
+echo "Generating configuration file at $CONFIG_FILE..."
+envsubst < "$TEMPLATE_FILE" > "$CONFIG_FILE"
+chmod 600 "$CONFIG_FILE"
 
 # -----------------------
 # Start PostgreSQL 18 via Homebrew
@@ -72,7 +120,6 @@ if command -v brew >/dev/null 2>&1; then
     brew services restart miniflux
 elif command -v systemctl >/dev/null 2>&1; then
     echo "Configuring systemd service for Miniflux..."
-    # Placeholder for systemd support if needed later
     # sudo cp miniflux.service /etc/systemd/system/
     # sudo systemctl daemon-reload
     # sudo systemctl restart miniflux
