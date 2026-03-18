@@ -31,6 +31,10 @@ end
 if type -q xcrun
     set -gx SDKROOT (xcrun --show-sdk-path)
 end
+set -gx PYENV_ROOT $HOME/.pyenv
+fish_add_path $PYENV_ROOT/bin
+pyenv init - | source
+pyenv virtualenv-init - | source
 
 bind -M insert \t atuin_or_complete
 end

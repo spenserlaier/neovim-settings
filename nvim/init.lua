@@ -1116,7 +1116,7 @@ require('lazy').setup({
     priority = 1000, -- Make sure to load this before all the other start plugins.
     lazy = false,
     config = function()
-      vim.cmd.colorscheme 'papercolor'
+      vim.cmd.colorscheme 'PaperColor'
     end,
   },
 
