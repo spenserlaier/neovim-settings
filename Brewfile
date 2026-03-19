@@ -19,3 +19,4 @@ brew "eza"
 #  11 │     line-numbers = true
 brew "git-delta"
 brew "lazygit"
+brew "atuin"
