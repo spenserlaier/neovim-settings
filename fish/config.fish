@@ -20,6 +20,19 @@ alias cat="bat"
 function ls
     command eza --hyperlink --icons $argv
 end
+function nvim
+    # If arguments are passed (e.g., nvim filename.txt), just open it normally
+    if count $argv > /dev/null
+        command nvim $argv
+    else
+        # If no arguments, launch fzf and store the result
+        set file (fzf)
+        # If a file was actually selected (you didn't hit escape), open it
+        if test -n "$file"
+            command nvim $file
+        end
+    end
+end
 function atuin_or_complete
     set cmd (commandline -b)
     if test -z "$cmd"
