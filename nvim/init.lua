@@ -4,6 +4,22 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Version-agnostic LSP config lookup
+_G.get_lsp = function(name)
+  if vim.fn.has('nvim-0.11') == 1 then
+    return {
+      setup = function(opts)
+        vim.lsp.config(name, opts)
+        vim.lsp.enable(name)
+      end,
+    }
+  end
+  local ok, lspconfig = pcall(require, 'lspconfig')
+  if ok then
+    return lspconfig[name]
+  end
+end
+
 -- enable true color
 vim.opt.termguicolors = true
 
@@ -186,7 +202,7 @@ require('lazy').setup({
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
   'https://github.com/stevearc/oil.nvim',
-  'https://github.com/flazz/vim-colorschemes',
+  --'https://github.com/flazz/vim-colorschemes',
   {
     'andymass/vim-matchup',
     event = 'BufReadPost', -- Load it lazily when you open a file
@@ -719,15 +735,22 @@ require('lazy').setup({
 
             -- We handle pylsp manually below, so ignore it here to avoid conflicts
             if server_name ~= 'pylsp' then
-              require('lspconfig')[server_name].setup(server)
+              local lsp = _G.get_lsp(server_name)
+              if lsp then
+                lsp.setup(server)
+              end
             end
           end,
         },
       }
 
-      require('lspconfig').pylsp.setup {
+      local pylsp = _G.get_lsp('pylsp')
+      if pylsp then
+        pylsp.setup {
         capabilities = require('blink.cmp').get_lsp_capabilities(),
-        root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
+        root_dir = (vim.fn.has('nvim-0.11') == 1 and function(path)
+          return vim.fs.root(path, { 'manage.py', '.git' })
+        end) or require('lspconfig/util').root_pattern('manage.py', '.git'),
 
         on_new_config = function(new_config, new_root_dir)
           -- 1. Locate the Project Python Binary
@@ -800,10 +823,11 @@ require('lazy').setup({
           },
         },
       }
-    end,
-  },
+    end
+  end,
+},
 
-  { -- Autoformat
+{ -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
     cmd = { 'ConformInfo' },
@@ -1163,10 +1187,14 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
+    branch = 'master', -- FORCE MASTER for stability
     main = 'nvim-treesitter.configs',
     dependencies = {
-      'nvim-treesitter/nvim-treesitter-textobjects', -- <--- MUST BE HERE
+      { 'nvim-treesitter/nvim-treesitter-textobjects', branch = 'master' },
     },
+    config = function(_, opts)
+      require('nvim-treesitter.configs').setup(opts)
+    end,
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       auto_install = true,
@@ -1427,15 +1455,18 @@ end, vim.tbl_extend('force', opts, { desc = 'Type Definitions (Telescope)' }))
 -- AUTOMATED NATIVE PYLSP SETUP
 -- 1. Finds project python
 -- 2. Auto-installs 'python-lsp-server[all]' if missing
--- 3. Launches the server
+-- launches the server
 -- =============================================================================
-require('lspconfig').pylsp.setup {
+local pylsp = _G.get_lsp('pylsp')
+if pylsp then
+  pylsp.setup {
   capabilities = require('blink.cmp').get_lsp_capabilities(),
-  root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
+  root_dir = (vim.fn.has('nvim-0.11') == 1 and function(path)
+    return vim.fs.root(path, { 'manage.py', '.git' })
+  end) or require('lspconfig/util').root_pattern('manage.py', '.git'),
 
   on_new_config = function(new_config, new_root_dir)
-    -- 1. Locate the Project Python Binary
-    local cmd = 'python3 -c "import sys; print(sys.executable)"'
+    -- 1. Locate the Project Python Binary    local cmd = 'python3 -c "import sys; print(sys.executable)"'
     local handle = io.popen(cmd)
     if not handle then
       return
@@ -1502,6 +1533,7 @@ require('lspconfig').pylsp.setup {
     },
   },
 }
+end
 
 -- Setup oil
 require('oil').setup()
