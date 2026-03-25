@@ -34,6 +34,12 @@ mkdir -p ~/.local/state/nvim/undo
 
 # Tmux
 ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
+# install tmux plugin manager
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+fi
+# Run the headless plugin installer (replaces prefix + I)
+~/.tmux/plugins/tpm/bin/install_plugins
 
 # Atuin
 mkdir -p ~/.config/atuin
@@ -83,5 +89,3 @@ fi
 ln -sf "$GITCONFIG_SOURCE" "$GITCONFIG_DEST"
 
 echo "Dotfiles and tools installed!"
-
-
