@@ -4,8 +4,8 @@
 if test (count $argv) -eq 1
     set selected $argv[1]
 else
-    # path list can be expanded according to common work paths
-    set selected (fd . ~/Documents ~/Desktop -t d -d 2 2>/dev/null | fzf)
+    # Increased depth to 4 so it actually finds nested git repositories
+    set selected (fd . ~/Documents ~/Desktop -t d -d 4 2>/dev/null | fzf)
 end
 
 # 2. If you hit escape in fzf, exit cleanly
@@ -13,8 +13,8 @@ if test -z "$selected"
     exit 0
 end
 
-# 3. Clean up the folder name for Tmux (replace dots with underscores)
-set selected_name (string replace -a '.' '_' (basename "$selected"))
+# 3. Clean up the folder name for Tmux (strip both dots and colons)
+set selected_name (basename "$selected" | string replace -a '.' '_' | string replace -a ':' '_')
 set tmux_running (pgrep tmux)
 
 # 4. If tmux isn't running at all, start it with this new session
