@@ -661,6 +661,9 @@ require('lazy').setup({
         --pylsp = {
         --  settings = {},
         --},
+        pyright = {
+          settings = {},
+        },
         ts_ls = {
           filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
           settings = {},
@@ -716,88 +719,7 @@ require('lazy').setup({
             local server = servers[server_name] or {}
             -- Merge capabilities (blink.cmp)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-
-            -- We handle pylsp manually below, so ignore it here to avoid conflicts
-            if server_name ~= 'pylsp' then
-              require('lspconfig')[server_name].setup(server)
-            end
           end,
-        },
-      }
-
-      require('lspconfig').pylsp.setup {
-        capabilities = require('blink.cmp').get_lsp_capabilities(),
-        root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
-
-        on_new_config = function(new_config, new_root_dir)
-          -- 1. Locate the Project Python Binary
-          local cmd = 'python3 -c "import sys; print(sys.executable)"'
-          local handle = io.popen(cmd)
-          if not handle then
-            return
-          end
-          local python_bin = handle:read '*a'
-          handle:close()
-
-          if python_bin then
-            python_bin = vim.trim(python_bin)
-            local pylsp_bin = python_bin:gsub('python3?$', 'pylsp')
-
-            -- 2. ROBUST CHECK: Verify Pylsp AND Pycodestyle (plugin) exist
-            -- We try to import pycodestyle to ensure the [all] extras are actually installed.
-            local check_cmd = python_bin
-              .. " -c \"import shutil, sys, pycodestyle; sys.exit(0 if shutil.which('pylsp') and sys.modules['pycodestyle'] else 1)\""
-
-            -- If the check command fails (exit code 1), we need to install/upgrade
-            if vim.fn.system(check_cmd) == '' and vim.v.shell_error ~= 0 then
-              vim.notify('Pylsp or Plugins missing. Auto-installing...', vim.log.levels.WARN)
-
-              -- 3. AUTO-INSTALL
-              -- We pass a LIST to jobstart to avoid shell quoting issues with '[all]'
-              vim.fn.jobstart({
-                python_bin,
-                '-m',
-                'pip',
-                'install',
-                'python-lsp-server[all]',
-              }, {
-                on_exit = function(_, exit_code)
-                  if exit_code == 0 then
-                    vim.notify('Pylsp & Plugins installed! Restarting...', vim.log.levels.INFO)
-                    vim.schedule(function()
-                      vim.cmd 'LspRestart'
-                    end)
-                  else
-                    vim.notify('Install failed. Check :messages', vim.log.levels.ERROR)
-                  end
-                end,
-              })
-              return
-            end
-
-            -- 4. Configure the Server
-            new_config.cmd = { pylsp_bin }
-          end
-        end,
-
-        settings = {
-          pylsp = {
-            plugins = {
-              -- Error checking (Pyflakes)
-              pyflakes = { enabled = true },
-              -- Style checking (Pycodestyle) - Enable if you want to confirm it's installed
-              pycodestyle = { enabled = true },
-              mccabe = { enabled = false },
-
-              -- Autocomplete / Go-To (Jedi)
-              jedi_completion = {
-                enabled = true,
-                include_params = true,
-                fuzzy = true,
-              },
-              jedi_definition = { enabled = true },
-            },
-          },
         },
       }
     end,
@@ -1417,91 +1339,6 @@ end, vim.tbl_extend('force', opts, { desc = 'Implementations (Telescope)' }))
 vim.keymap.set('n', 'gy', function()
   builtin.lsp_type_definitions(telescope_opts)
 end, vim.tbl_extend('force', opts, { desc = 'Type Definitions (Telescope)' }))
--- =============================================================================
--- this script is necessary for proper django functionality with django 3.0.
--- it allows pylsp to hook into the django project runtime and properly
--- detect runtime definitions. when working with another project with
--- django >= 5, we can just use pyright + django-stubs.
--- django-stubs won't work with django 3.0 due to mismatches between
--- the stubs themselves, and pyright's expectations for stub formats
--- AUTOMATED NATIVE PYLSP SETUP
--- 1. Finds project python
--- 2. Auto-installs 'python-lsp-server[all]' if missing
--- 3. Launches the server
--- =============================================================================
-require('lspconfig').pylsp.setup {
-  capabilities = require('blink.cmp').get_lsp_capabilities(),
-  root_dir = require('lspconfig/util').root_pattern('manage.py', '.git'),
-
-  on_new_config = function(new_config, new_root_dir)
-    -- 1. Locate the Project Python Binary
-    local cmd = 'python3 -c "import sys; print(sys.executable)"'
-    local handle = io.popen(cmd)
-    if not handle then
-      return
-    end
-    local python_bin = handle:read '*a'
-    handle:close()
-
-    if python_bin then
-      python_bin = vim.trim(python_bin)
-      local pylsp_bin = python_bin:gsub('python3?$', 'pylsp')
-
-      -- 2. ROBUST CHECK: Verify Pylsp AND Pycodestyle (plugin) exist
-      local check_cmd = python_bin .. " -c \"import shutil, sys, pycodestyle; sys.exit(0 if shutil.which('pylsp') and sys.modules['pycodestyle'] else 1)\""
-
-      -- If the check command fails (exit code 1), we need to install/upgrade
-      if vim.fn.system(check_cmd) == '' and vim.v.shell_error ~= 0 then
-        -- NEW: Safety check for an active virtual environment
-        if not vim.env.VIRTUAL_ENV then
-          vim.notify(
-            'No virtual environment detected! Skipping pylsp auto-install to protect system Python. Please activate a venv and restart Neovim.',
-            vim.log.levels.WARN
-          )
-          return -- Abort the install process safely
-        end
-
-        vim.notify('Pylsp or Plugins missing in venv. Auto-installing...', vim.log.levels.INFO)
-
-        -- 3. AUTO-INSTALL
-        vim.fn.jobstart({
-          python_bin,
-          '-m',
-          'pip',
-          'install',
-          'python-lsp-server[all]',
-        }, {
-          on_exit = function(_, exit_code)
-            if exit_code == 0 then
-              vim.notify('Pylsp & Plugins installed! Restarting...', vim.log.levels.INFO)
-              vim.schedule(function()
-                vim.cmd 'LspRestart'
-              end)
-            else
-              vim.notify('Install failed. Check :messages', vim.log.levels.ERROR)
-            end
-          end,
-        })
-        return
-      end
-
-      -- 4. Configure the Server
-      new_config.cmd = { pylsp_bin }
-    end
-  end,
-
-  settings = {
-    pylsp = {
-      plugins = {
-        pyflakes = { enabled = true },
-        pycodestyle = { enabled = true },
-        mccabe = { enabled = false },
-        jedi_completion = { enabled = true, include_params = true, fuzzy = true },
-        jedi_definition = { enabled = true },
-      },
-    },
-  },
-}
 
 -- Setup oil
 require('oil').setup()
