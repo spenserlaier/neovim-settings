@@ -50,4 +50,6 @@ pyenv init - | source
 pyenv virtualenv-init - | source
 
 bind -M insert \t atuin_or_complete
+set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense' # optional
+carapace _carapace | source
 end
