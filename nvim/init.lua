@@ -646,13 +646,42 @@ require('lazy').setup({
         },
       })
 
+      vim.lsp.config('pylsp', {
+        settings = {
+          pylsp = {
+            plugins = {
+              pyflakes = { enabled = false },
+              pycodestyle = { enabled = false },
+              mccabe = { enabled = false },
+            },
+          },
+        },
+      })
+
+      -- Installed but disabled by default to prevent unwanted formatting/linting
+      vim.lsp.config('prettier', { enabled = false })
+
       -- Mason Integration
-      local servers = { 'clangd', 'pyright', 'ts_ls', 'lua_ls' }
+      local servers = {
+        'clangd',
+        'pyright',
+        'ts_ls',
+        'lua_ls',
+        'pylsp',
+        'bashls',
+        'yamlls',
+        'taplo',
+      }
 
       require('mason-tool-installer').setup {
         ensure_installed = {
-          'stylua', -- Used to format Lua code
+          'stylua',
           'debugpy',
+          'shellcheck',
+          'shfmt',
+          'eslint_d',
+          'markdownlint',
+          'prettier',
         },
       }
 
