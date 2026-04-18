@@ -1408,8 +1408,8 @@ vim.keymap.set('n', 'gd', function()
       -- Overwrite <CR> (Enter) to use 'select_tab' instead of default
       -- or, use actions.select_tab to open in a new tab instead of
       -- a vertical split
-      map('i', '<CR>', actions.select_vertical)
-      map('n', '<CR>', actions.select_vertical)
+      map('i', '<CR>', actions.select_default)
+      map('n', '<CR>', actions.select_default)
       return true -- Return true to keep default mappings (like <C-c> to close)
     end,
   }))
