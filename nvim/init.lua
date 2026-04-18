@@ -391,7 +391,44 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
-      vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
+      --vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
+      vim.keymap.set('n', '<leader>sh', function()
+        -- 1. create a helper to grab the unique signature of the current quickfix list
+        local get_qf_state = function()
+          local qf = vim.fn.getqflist { id = 0, changedtick = 1 }
+          return tostring(qf.id) .. '-' .. tostring(qf.changedtick)
+        end
+
+        local initial_state = get_qf_state()
+
+        -- 2. trigger the async gitsigns operation silently
+        require('gitsigns').setqflist('all', { open = false })
+
+        -- 3. wait dynamically for the list to update
+        local attempts = 0
+        local function check_state()
+          attempts = attempts + 1
+
+          if get_qf_state() ~= initial_state then
+            -- the signature changed! gitsigns is done.
+            -- check if it actually found anything before opening telescope.
+            if #vim.fn.getqflist() > 0 then
+              require('telescope.builtin').quickfix()
+            else
+              print 'No hunks found.'
+            end
+          elseif attempts < 50 then
+            -- if it hasn't changed yet, check again in 10ms.
+            -- this gives it a maximum timeout of 500ms so it doesn't hang forever.
+            vim.defer_fn(check_state, 10)
+          else
+            -- timeout hit (likely zero hunks and gitsigns didn't even update the list)
+            print 'No hunks found (timeout).'
+          end
+        end
+
+        check_state()
+      end, { desc = '[S]earch [H]unks' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
