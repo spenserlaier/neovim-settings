@@ -1116,32 +1116,38 @@ require('lazy').setup({
   },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs',
-    dependencies = {
-      'nvim-treesitter/nvim-treesitter-textobjects', -- <--- MUST BE HERE
-    },
-    opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
-      auto_install = true,
-      highlight = {
-        enable = true,
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
+    config = function()
+      local ts = require 'nvim-treesitter'
+      ts.setup()
+      ts.install {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'python',
+      }
+    end,
+  },
 
-      -- 1. RESTORE THE % JUMPING
-      matchup = {
-        enable = true,
-      },
-
-      -- 2. ENABLE NAVIGATION SHORTCUTS (]f, [f, etc)
-      textobjects = {
+  {
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    branch = 'main',
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    config = function()
+      require('nvim-treesitter-textobjects').setup {
         select = {
           enable = true,
-          lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
+          lookahead = true,
           keymaps = {
-            -- You can use the capture groups defined in textobjects.scm
             ['af'] = '@function.outer',
             ['if'] = '@function.inner',
             ['ac'] = '@class.outer',
@@ -1150,7 +1156,7 @@ require('lazy').setup({
         },
         move = {
           enable = true,
-          set_jumps = true, -- whether to set jumps in the jumplist
+          set_jumps = true,
           goto_next_start = {
             [']f'] = '@function.outer',
             [']c'] = '@class.outer',
@@ -1160,8 +1166,8 @@ require('lazy').setup({
             ['[c'] = '@class.outer',
           },
         },
-      },
-    },
+      }
+    end,
   },
 
   { 'christoomey/vim-tmux-navigator' },

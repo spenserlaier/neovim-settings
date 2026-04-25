@@ -4,6 +4,8 @@ cask "font-fira-code-nerd-font"
 cask "font-caskaydia-cove-nerd-font"
 # ranger file manager
 brew "ranger"
+# tree-sitter cli 
+brew "tree-sitter"
 # neovim
 brew "neovim"
 # eza (ls replacement)
