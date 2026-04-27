@@ -1143,30 +1143,51 @@ require('lazy').setup({
     branch = 'main',
     dependencies = { 'nvim-treesitter/nvim-treesitter' },
     config = function()
+      -- The new setup only takes core behavioral rules, NOT keymaps
       require('nvim-treesitter-textobjects').setup {
         select = {
           enable = true,
           lookahead = true,
-          keymaps = {
-            ['af'] = '@function.outer',
-            ['if'] = '@function.inner',
-            ['ac'] = '@class.outer',
-            ['ic'] = '@class.inner',
-          },
-        },
-        move = {
-          enable = true,
-          set_jumps = true,
-          goto_next_start = {
-            [']f'] = '@function.outer',
-            [']c'] = '@class.outer',
-          },
-          goto_previous_start = {
-            ['[f'] = '@function.outer',
-            ['[c'] = '@class.outer',
-          },
         },
       }
+
+      -- You must now map keys manually to the exposed modules
+      local ts_select = require 'nvim-treesitter-textobjects.select'
+      local ts_move = require 'nvim-treesitter-textobjects.move'
+
+      -- Select Textobjects (Visual / Operator-pending mode)
+      vim.keymap.set({ 'x', 'o' }, 'af', function()
+        ts_select.select_textobject('@function.outer', 'textobjects')
+      end, { desc = 'Select outer part of a function' })
+
+      vim.keymap.set({ 'x', 'o' }, 'if', function()
+        ts_select.select_textobject('@function.inner', 'textobjects')
+      end, { desc = 'Select inner part of a function' })
+
+      vim.keymap.set({ 'x', 'o' }, 'ac', function()
+        ts_select.select_textobject('@class.outer', 'textobjects')
+      end, { desc = 'Select outer part of a class' })
+
+      vim.keymap.set({ 'x', 'o' }, 'ic', function()
+        ts_select.select_textobject('@class.inner', 'textobjects')
+      end, { desc = 'Select inner part of a class' })
+
+      -- Move Textobjects (Normal mode)
+      vim.keymap.set('n', ']f', function()
+        ts_move.goto_next_start('@function.outer', 'textobjects')
+      end, { desc = 'Next function start' })
+
+      vim.keymap.set('n', ']c', function()
+        ts_move.goto_next_start('@class.outer', 'textobjects')
+      end, { desc = 'Next class start' })
+
+      vim.keymap.set('n', '[f', function()
+        ts_move.goto_previous_start('@function.outer', 'textobjects')
+      end, { desc = 'Previous function start' })
+
+      vim.keymap.set('n', '[c', function()
+        ts_move.goto_previous_start('@class.outer', 'textobjects')
+      end, { desc = 'Previous class start' })
     end,
   },
 
