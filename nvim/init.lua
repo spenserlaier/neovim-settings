@@ -1384,3 +1384,19 @@ vim.opt.undofile = true
 
 -- Ensure papercolor is applied last
 vim.cmd.colorscheme 'Atelier_CaveDark'
+-- Force Neovim to use Treesitter highlighting if a parser is available
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = '*',
+  callback = function(args)
+    -- 1. Ignore temporary/UI buffers (like blink-cmp popup menus)
+    if vim.bo[args.buf].buftype ~= '' then
+      return
+    end
+
+    local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
+    if lang then
+      -- 2. Wrap the start command in pcall so it fails silently if no parser exists
+      pcall(vim.treesitter.start, args.buf, lang)
+    end
+  end,
+})
