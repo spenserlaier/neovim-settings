@@ -8,7 +8,7 @@ vim.g.maplocalleader = ' '
 vim.opt.termguicolors = true
 
 -- Set background for papercolor
-vim.o.background = 'dark'
+-- vim.o.background = 'dark'
 
 -- Set Default Tab Behavior
 vim.o.tabstop = 4
@@ -1005,11 +1005,6 @@ require('lazy').setup({
 
   {
     'NLKNguyen/papercolor-theme',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    lazy = false,
-    config = function()
-      vim.cmd.colorscheme 'PaperColor'
-    end,
   },
 
   -- Highlight todo, notes, etc in comments
@@ -1388,4 +1383,4 @@ vim.opt.undodir = undodir
 vim.opt.undofile = true
 
 -- Ensure papercolor is applied last
-vim.cmd.colorscheme 'gruvbox'
+vim.cmd.colorscheme 'Atelier_CaveDark'
