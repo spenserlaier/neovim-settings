@@ -1024,14 +1024,17 @@ require('lazy').setup({
     'https://github.com/kylechui/nvim-surround',
     opts = {
       mappings = {
-        add = 'ys',
-        delete = 'ds',
-        replace = 'cs',
-        -- These are less common, but mapped to keep them out of Flash's way
-        find = 'yf',
-        find_left = 'yF',
-        highlight = 'yh',
-        update_n_lines = 'yn',
+        -- experimental keybind overrides designed to avoid
+        -- collisions with flash. currently commented out because
+        -- it seems just being fast enough with surround avoids flash-related issues.
+        --        add = 'ys',
+        --        delete = 'ds',
+        --        replace = 'cs',
+        --        -- These are less common, but mapped to keep them out of Flash's way
+        --        find = 'yf',
+        --        find_left = 'yF',
+        --        highlight = 'yh',
+        --        update_n_lines = 'yn',
       },
     },
   },
