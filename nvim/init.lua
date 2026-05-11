@@ -1382,8 +1382,7 @@ end
 vim.opt.undodir = undodir
 vim.opt.undofile = true
 
--- Ensure papercolor is applied last
-vim.cmd.colorscheme 'Atelier_CaveDark'
+vim.cmd.colorscheme 'catppuccin'
 -- Force Neovim to use Treesitter highlighting if a parser is available
 vim.api.nvim_create_autocmd('FileType', {
   pattern = '*',
