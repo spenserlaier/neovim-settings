@@ -1132,6 +1132,10 @@ require('lazy').setup({
         'vim',
         'vimdoc',
         'python',
+        'tsx',
+        'javascript',
+        'typescript',
+        'jsx',
       }
     end,
   },
