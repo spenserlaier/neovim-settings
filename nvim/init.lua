@@ -1137,7 +1137,8 @@ require('lazy').setup({
         'typescript',
         'jsx',
         'yaml',
-        'yml',
+        'fish',
+        'toml',
       }
     end,
   },
