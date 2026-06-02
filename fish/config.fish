@@ -16,6 +16,7 @@ atuin init fish --disable-up-arrow | source
 zoxide init fish | source
 # make 'cd' behave like z
 alias cd="z"
+set -gx FZF_DEFAULT_OPTS "--bind 'ctrl-j:down,ctrl-k:up'"
 alias cat="bat"
 function ls
     command eza --hyperlink --icons $argv
