@@ -48,7 +48,13 @@ vim.g.loaded_netrwPlugin = 1
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
-
+-- django template recognition
+vim.filetype.add {
+  pattern = {
+    -- Matches any .html file located inside a directory named "templates"
+    ['.*templates/.*%.html'] = 'htmldjango',
+  },
+}
 -- Enable break indent
 vim.o.breakindent = true
 
@@ -1119,7 +1125,8 @@ require('lazy').setup({
     config = function()
       local ts = require 'nvim-treesitter'
       ts.setup()
-      ts.install {
+
+      local languages = {
         'bash',
         'c',
         'diff',
@@ -1135,11 +1142,32 @@ require('lazy').setup({
         'tsx',
         'javascript',
         'typescript',
-        'jsx',
         'yaml',
+        'htmldjango',
         'fish',
-        'toml',
       }
+
+      -- 1. Correct main branch API check for already installed languages
+      local installed = ts.get_installed()
+      local missing = vim.tbl_filter(function(lang)
+        return not vim.tbl_contains(installed, lang)
+      end, languages)
+
+      if #missing > 0 then
+        ts.install(missing)
+      end
+
+      -- 2. Fully automated highlighting based on file type
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = '*',
+        callback = function(args)
+          local lang = vim.bo[args.buf].filetype
+          if lang and lang ~= '' then
+            -- Silently attempt to start treesitter. If it fails (e.g., on blink-cmp-documentation), it does nothing.
+            pcall(vim.treesitter.start, args.buf, lang)
+          end
+        end,
+      })
     end,
   },
 
