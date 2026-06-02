@@ -1136,6 +1136,8 @@ require('lazy').setup({
         'javascript',
         'typescript',
         'jsx',
+        'yaml',
+        'yml',
       }
     end,
   },
