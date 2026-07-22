@@ -19,7 +19,7 @@ alias cd="z"
 set -gx FZF_DEFAULT_OPTS "--bind 'ctrl-j:down,ctrl-k:up'"
 alias cat="bat"
 function ls
-    command eza --hyperlink --icons $argv
+    command eza --hyperlink --icons=auto $argv
 end
 function nvim
     # If arguments are passed (e.g., nvim filename.txt), just open it normally
