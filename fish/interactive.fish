@@ -4,7 +4,6 @@ set -gx VISUAL nvim
 set -gx MANPAGER "nvim +Man!"
 
 fish_add_path ~/.local/bin
-fish_add_path ~/.local/share/mise/shims
 fish_add_path ~/.cargo/bin
 fish_add_path ~/.npm-global/bin
 

@@ -16,9 +16,9 @@ configuration and generates the Atuin and Starship integrations. The legacy
 itself, so the pre-Nix installer remains usable during the migration.
 
 Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv has
-been removed. Mise is no longer initialized by Fish, although its shim path and
-legacy installer artifacts remain temporarily for compatibility; its language
-runtimes are not part of this Home Manager configuration.
+been removed. Mise is no longer initialized or added to Fish's path, although
+its legacy installer artifacts remain temporarily; its language runtimes are
+not part of this Home Manager configuration.
 
 Tmux is managed through its native module. `tmux/common.conf` contains the shared
 configuration, while Home Manager supplies pinned Resurrect and Continuum
