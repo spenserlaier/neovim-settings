@@ -14,7 +14,6 @@
     delta
     eza
     fd
-    fish
     fzf
     fx
     gnumake
@@ -34,8 +33,13 @@
   programs = {
     atuin = {
       enable = true;
-      enableFishIntegration = false;
+      enableFishIntegration = true;
       settings = builtins.fromTOML (builtins.readFile ../atuin/config.toml);
+    };
+
+    fish = {
+      enable = true;
+      interactiveShellInit = builtins.readFile ../fish/interactive.fish;
     };
 
     git = {
@@ -64,8 +68,16 @@
 
     starship = {
       enable = true;
-      enableFishIntegration = false;
+      enableFishIntegration = true;
       settings = builtins.fromTOML (builtins.readFile ../starship/starship.toml);
+    };
+  };
+
+  xdg.configFile = {
+    "fish/functions/nvimvenv.fish".source = ../fish/functions/nvimvenv.fish;
+    "fish/tmux-sessionizer.fish" = {
+      source = ../fish/tmux-sessionizer.fish;
+      executable = true;
     };
   };
 }

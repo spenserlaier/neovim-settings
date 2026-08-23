@@ -9,9 +9,15 @@ native program modules. The TOML configuration files remain the source of truth
 for Jujutsu, Atuin, and Starship; the small Git configuration is represented
 directly in the Home Manager module.
 
-Atuin and Starship's Home Manager Fish integrations remain disabled while the
-existing Fish configuration initializes them. This avoids initializing either
-program twice during the incremental migration.
+Fish is managed through its native module. Shared interactive behavior lives in
+`fish/interactive.fish`; Home Manager embeds that file in its generated Fish
+configuration and generates the Atuin and Starship integrations. The legacy
+`fish/config.fish` sources the same shared file and initializes those integrations
+itself, so the pre-Nix installer remains usable during the migration.
+
+Mise and Pyenv initialization is retained for existing machines but guarded by
+availability checks. Their language runtimes are not part of this Home Manager
+configuration.
 
 ## Build without activating
 
