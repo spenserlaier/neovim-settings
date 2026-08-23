@@ -22,7 +22,6 @@
     neovim
     ripgrep
     sd
-    tmux
     tree
     tree-sitter
     unzip
@@ -35,6 +34,11 @@
       enable = true;
       enableFishIntegration = true;
       settings = builtins.fromTOML (builtins.readFile ../atuin/config.toml);
+    };
+
+    direnv = {
+      enable = true;
+      nix-direnv.enable = true;
     };
 
     fish = {
@@ -70,6 +74,15 @@
       enable = true;
       enableFishIntegration = true;
       settings = builtins.fromTOML (builtins.readFile ../starship/starship.toml);
+    };
+
+    tmux = {
+      enable = true;
+      extraConfig = builtins.readFile ../tmux/common.conf;
+      plugins = with pkgs.tmuxPlugins; [
+        resurrect
+        continuum
+      ];
     };
   };
 

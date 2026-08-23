@@ -15,9 +15,15 @@ configuration and generates the Atuin and Starship integrations. The legacy
 `fish/config.fish` sources the same shared file and initializes those integrations
 itself, so the pre-Nix installer remains usable during the migration.
 
-Mise and Pyenv initialization is retained for existing machines but guarded by
-availability checks. Their language runtimes are not part of this Home Manager
-configuration.
+Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv has
+been removed. Mise is no longer initialized by Fish, although its shim path and
+legacy installer artifacts remain temporarily for compatibility; its language
+runtimes are not part of this Home Manager configuration.
+
+Tmux is managed through its native module. `tmux/common.conf` contains the shared
+configuration, while Home Manager supplies pinned Resurrect and Continuum
+plugins. The legacy `tmux/tmux.conf` sources the same shared configuration and
+retains TPM bootstrap support only for the pre-Nix installer.
 
 ## Build without activating
 

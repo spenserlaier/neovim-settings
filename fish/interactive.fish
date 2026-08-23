@@ -7,12 +7,6 @@ fish_add_path ~/.local/bin
 fish_add_path ~/.local/share/mise/shims
 fish_add_path ~/.cargo/bin
 fish_add_path ~/.npm-global/bin
-fish_add_path ~/.pyenv/bin
-
-# Language runtime managers are optional during the Nix migration.
-if type -q mise
-    mise activate fish | source
-end
 
 set -g fish_key_bindings fish_vi_key_bindings
 
@@ -50,13 +44,6 @@ end
 
 if type -q xcrun
     set -gx SDKROOT (xcrun --show-sdk-path)
-end
-
-set -gx PYENV_ROOT $HOME/.pyenv
-fish_add_path $PYENV_ROOT/bin
-if type -q pyenv
-    pyenv init - | source
-    pyenv virtualenv-init - | source
 end
 
 bind -M insert \t atuin_or_complete
