@@ -1,3 +1,7 @@
 [aliases]
 # Show the 10 most recent commits that have bookmarks
 recent = ["log", "-r", "bookmarks()", "-n", "10"]
+
+[user]
+name = "Spenser Laier"
+email = "spenserlaier@gmail.com"
