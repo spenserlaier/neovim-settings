@@ -1,4 +1,4 @@
-# Commands shared by the legacy config and Home Manager's generated config.
+# Interactive Fish configuration embedded by Home Manager.
 set -gx EDITOR nvim
 set -gx VISUAL nvim
 set -gx MANPAGER "nvim +Man!"
