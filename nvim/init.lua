@@ -1246,3 +1246,17 @@ vim.api.nvim_create_autocmd('FileType', {
     end
   end,
 })
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  callback = function(event)
+    local opts = { buffer = event.buf, expr = true, silent = true }
+
+    vim.keymap.set('n', 'j', function()
+      return vim.v.count == 0 and 'gj' or 'j'
+    end, opts)
+
+    vim.keymap.set('n', 'k', function()
+      return vim.v.count == 0 and 'gk' or 'k'
+    end, opts)
+  end,
+})
