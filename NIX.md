@@ -25,6 +25,12 @@ configuration, while Home Manager supplies pinned Resurrect and Continuum
 plugins. The legacy `tmux/tmux.conf` sources the same shared configuration and
 retains TPM bootstrap support only for the pre-Nix installer.
 
+Neovim is installed through its native module and is the default editor. Its
+configuration is copied into the Nix store and linked at `~/.config/nvim`, while
+native build and search dependencies are included in Neovim's wrapped runtime.
+Lazy, Mason, and nvim-treesitter continue to manage plugins, development tools,
+and parsers at runtime during this migration phase.
+
 ## Build without activating
 
 On Apple Silicon macOS:
@@ -42,5 +48,9 @@ nix build path:.#homeConfigurations."spenser@linux".activationPackage
 Using `path:.` makes local Jujutsu working-copy files visible to Nix before the
 change is committed. After the configuration is committed, `.#...` works too.
 
-Activation is intentionally deferred until the generated package manifest has
-been reviewed and the existing Homebrew/Mise overlap has been considered.
+Build before activation to catch evaluation and package errors. The current
+macOS profile can then be activated with:
+
+```sh
+home-manager switch --flake 'path:.#spenser@macos'
+```

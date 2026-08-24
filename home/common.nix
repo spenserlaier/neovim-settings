@@ -4,8 +4,8 @@
   # Keep this at the version used for the first Home Manager activation.
   home.stateVersion = "26.05";
 
-  # This initial module deliberately manages packages only. Existing dotfile
-  # symlinks and application configuration remain untouched until later phases.
+  # General-purpose command-line tools available outside program-specific
+  # wrappers as well as inside editors and shells.
   home.packages = with pkgs; [
     bat
     carapace
@@ -19,7 +19,6 @@
     gnumake
     jq
     lazygit
-    neovim
     ripgrep
     sd
     tree
@@ -70,6 +69,21 @@
       settings = builtins.fromTOML (builtins.readFile ../jujutsu/.jjconfig.toml);
     };
 
+    neovim = {
+      enable = true;
+      defaultEditor = true;
+      extraPackages = with pkgs; [
+        clang
+        clang-tools
+        fd
+        git
+        gnumake
+        ripgrep
+        tree-sitter
+        unzip
+      ];
+    };
+
     starship = {
       enable = true;
       enableFishIntegration = true;
@@ -92,5 +106,6 @@
       source = ../fish/tmux-sessionizer.fish;
       executable = true;
     };
+    "nvim".source = ../nvim;
   };
 }
