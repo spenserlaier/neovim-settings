@@ -3,3 +3,4 @@ fish_variables
 .env.local
 miniflux/config.env
 miniflux/config.env.local
+result
