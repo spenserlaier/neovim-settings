@@ -46,5 +46,6 @@ if type -q xcrun
 end
 
 bind -M insert \t atuin_or_complete
+bind -M insert \cn accept-autosuggestion
 set -gx CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense'
 carapace _carapace fish | source
