@@ -38,6 +38,20 @@ Project-specific formatters such as Darker remain discoverable through `PATH`
 and can be supplied by a Direnv development shell without becoming global home
 packages.
 
+## Verify
+
+Run the repository-local verification command before committing changes to the
+Home Manager or Neovim configuration:
+
+```sh
+./verify.sh
+```
+
+It evaluates both supported Home Manager targets, builds the current host
+without creating a `result` symlink, validates the Lazy lock file, and checks
+the Nix-wrapped Neovim tools and parsers without loading or modifying Lazy's
+runtime state.
+
 ## Build without activating
 
 On Apple Silicon macOS:
