@@ -488,11 +488,6 @@ require('lazy').setup({
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
     dependencies = {
-      -- Automatically install LSPs and related tools to stdpath for Neovim
-      { 'mason-org/mason.nvim', opts = {} },
-      'mason-org/mason-lspconfig.nvim',
-      'WhoIsSethDaniel/mason-tool-installer.nvim',
-
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
 
@@ -664,10 +659,8 @@ require('lazy').setup({
         },
       })
 
-      -- Installed but disabled by default to prevent unwanted formatting/linting
-      vim.lsp.config('prettier', { enabled = false })
-
-      -- Mason Integration
+      -- LSP executables are supplied by Home Manager. Project-specific servers
+      -- can instead be supplied by a Direnv development shell.
       local servers = {
         'clangd',
         'pyright',
@@ -679,22 +672,7 @@ require('lazy').setup({
         'taplo',
       }
 
-      require('mason-tool-installer').setup {
-        ensure_installed = {
-          'stylua',
-          'debugpy',
-          'shellcheck',
-          'shfmt',
-          'eslint_d',
-          'markdownlint',
-          'prettier',
-        },
-      }
-
-      require('mason-lspconfig').setup {
-        ensure_installed = servers,
-        automatic_enable = true, -- Automatically calls vim.lsp.enable() for Mason-installed servers
-      }
+      vim.lsp.enable(servers)
     end,
   },
 
@@ -853,134 +831,6 @@ require('lazy').setup({
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
     },
-  },
-
-  {
-    'mfussenegger/nvim-dap',
-    dependencies = {
-      'rcarriga/nvim-dap-ui',
-      'nvim-neotest/nvim-nio',
-    },
-    keys = {
-      {
-        '<leader>db',
-        function()
-          require('dap').toggle_breakpoint()
-        end,
-        desc = 'Debug: Toggle [B]reakpoint',
-      },
-      {
-        '<leader>dc',
-        function()
-          require('dap').continue()
-        end,
-        desc = 'Debug: Start/[C]ontinue',
-      },
-      {
-        '<leader>di',
-        function()
-          require('dap').step_into()
-        end,
-        desc = 'Debug: Step [I]nto',
-      },
-      {
-        '<leader>do',
-        function()
-          require('dap').step_over()
-        end,
-        desc = 'Debug: Step [O]ver',
-      },
-      {
-        '<leader>dt',
-        function()
-          require('dap').terminate()
-        end,
-        desc = 'Debug: [T]erminate',
-      },
-      {
-        '<leader>du',
-        function()
-          require('dapui').toggle()
-        end,
-        desc = 'Debug: Toggle [U]I',
-      },
-    },
-    config = function()
-      local dap = require 'dap'
-      local dapui = require 'dapui'
-
-      require('dapui').setup()
-
-      -- UI Hooks
-      dap.listeners.before.attach.dapui_config = function()
-        dapui.open()
-      end
-      dap.listeners.before.launch.dapui_config = function()
-        dapui.open()
-      end
-      dap.listeners.before.event_terminated.dapui_config = function()
-        dapui.close()
-      end
-      dap.listeners.before.event_exited.dapui_config = function()
-        dapui.close()
-      end
-
-      -- ======================================================================
-      -- NATIVE DEBUGGER SETUP (Auto-Install)
-      -- ======================================================================
-
-      -- 1. Find Project Python
-      local cmd = 'python3 -c "import sys; print(sys.executable)"'
-      local handle = io.popen(cmd)
-      if not handle then
-        return
-      end
-      local python_bin = handle:read '*a'
-      handle:close()
-
-      if python_bin then
-        python_bin = vim.trim(python_bin)
-
-        -- 2. Check & Install debugpy
-        -- Check if we can import debugpy in this environment
-        local check_cmd = python_bin .. ' -c "import debugpy"'
-
-        if vim.fn.system(check_cmd) == '' and vim.v.shell_error ~= 0 then
-          vim.notify('Debugpy missing in venv. Auto-installing...', vim.log.levels.WARN)
-          -- Synchronous install (blocks UI briefly) to ensure it works immediately
-          local result = vim.fn.system { python_bin, '-m', 'pip', 'install', 'debugpy' }
-          if vim.v.shell_error == 0 then
-            vim.notify('Debugpy installed!', vim.log.levels.INFO)
-          else
-            vim.notify('Debugpy install failed: ' .. result, vim.log.levels.ERROR)
-          end
-        end
-
-        -- 3. Define the Adapter (NATIVE)
-        -- Instead of using Mason's adapter, we run: python -m debugpy.adapter
-        dap.adapters.python = {
-          type = 'executable',
-          command = python_bin,
-          args = { '-m', 'debugpy.adapter' },
-        }
-
-        -- 4. Define the Configuration
-        dap.configurations.python = {
-          {
-            type = 'python',
-            request = 'launch',
-            name = 'Django (Native)',
-            program = vim.fn.getcwd() .. '/manage.py',
-            args = { 'runserver', '--noreload' },
-            django = true,
-            console = 'integratedTerminal',
-
-            -- This ensures the launched process ALSO uses the project python
-            pythonPath = python_bin,
-          },
-        }
-      end
-    end,
   },
 
   {
@@ -1236,7 +1086,6 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
 
-  require 'kickstart.plugins.debug',
   require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',

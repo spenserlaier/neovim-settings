@@ -72,15 +72,30 @@
     neovim = {
       enable = true;
       defaultEditor = true;
+      withNodeJs = false;
+      withPython3 = false;
+      withRuby = false;
       extraPackages = with pkgs; [
+        bash-language-server
         clang
         clang-tools
         fd
         git
         gnumake
+        lua-language-server
+        markdownlint-cli
+        pyright
+        python3Packages.python-lsp-server
         ripgrep
+        shellcheck
+        shfmt
+        stylua
+        taplo
         tree-sitter
+        typescript
+        typescript-language-server
         unzip
+        yaml-language-server
       ];
     };
 
