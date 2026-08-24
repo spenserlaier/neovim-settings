@@ -75,6 +75,24 @@
       withNodeJs = false;
       withPython3 = false;
       withRuby = false;
+      plugins = [
+        (pkgs.vimPlugins.nvim-treesitter.withPlugins (parsers: with parsers; [
+          bash
+          c
+          diff
+          fish
+          html
+          htmldjango
+          javascript
+          lua
+          markdown
+          markdown_inline
+          python
+          tsx
+          typescript
+          yaml
+        ]))
+      ];
       extraPackages = with pkgs; [
         bash-language-server
         clang

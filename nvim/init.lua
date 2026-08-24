@@ -155,6 +155,19 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Tree-sitter itself and the configured parsers are supplied by Nix. Start
+-- highlighting whenever Neovim has a parser for the current file type.
+require('nvim-treesitter').setup()
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = '*',
+  callback = function(args)
+    local lang = vim.bo[args.buf].filetype
+    if lang and lang ~= '' then
+      pcall(vim.treesitter.start, args.buf, lang)
+    end
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -968,63 +981,9 @@ require('lazy').setup({
       },
     },
   },
-  { -- Highlight, edit, and navigate code
-    'nvim-treesitter/nvim-treesitter',
-    branch = 'main',
-    build = ':TSUpdate',
-    config = function()
-      local ts = require 'nvim-treesitter'
-      ts.setup()
-
-      local languages = {
-        'bash',
-        'c',
-        'diff',
-        'html',
-        'lua',
-        'luadoc',
-        'markdown',
-        'markdown_inline',
-        'query',
-        'vim',
-        'vimdoc',
-        'python',
-        'tsx',
-        'javascript',
-        'typescript',
-        'yaml',
-        'htmldjango',
-        'fish',
-      }
-
-      -- 1. Correct main branch API check for already installed languages
-      local installed = ts.get_installed()
-      local missing = vim.tbl_filter(function(lang)
-        return not vim.tbl_contains(installed, lang)
-      end, languages)
-
-      if #missing > 0 then
-        ts.install(missing)
-      end
-
-      -- 2. Fully automated highlighting based on file type
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = '*',
-        callback = function(args)
-          local lang = vim.bo[args.buf].filetype
-          if lang and lang ~= '' then
-            -- Silently attempt to start treesitter. If it fails (e.g., on blink-cmp-documentation), it does nothing.
-            pcall(vim.treesitter.start, args.buf, lang)
-          end
-        end,
-      })
-    end,
-  },
-
   {
     'nvim-treesitter/nvim-treesitter-textobjects',
     branch = 'main',
-    dependencies = { 'nvim-treesitter/nvim-treesitter' },
     config = function()
       -- The new setup only takes core behavioral rules, NOT keymaps
       require('nvim-treesitter-textobjects').setup {
@@ -1143,6 +1102,10 @@ require('lazy').setup({
     end,
   },
 }, {
+  -- Preserve native packages supplied through Home Manager's pack/hm/start.
+  performance = {
+    reset_packpath = false,
+  },
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table

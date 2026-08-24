@@ -29,9 +29,10 @@ Neovim is installed through its native module and is the default editor. Its
 configuration is copied into the Nix store and linked at `~/.config/nvim`, while
 native build and search dependencies are included in Neovim's wrapped runtime.
 Nix supplies the active language servers, StyLua, ShellCheck, shfmt, and
-Markdownlint. Neovim enables those servers directly without Mason. Lazy and
-nvim-treesitter continue to manage plugins and parsers at runtime during this
-migration phase.
+Markdownlint. Neovim enables those servers directly without Mason. Nix also
+pins nvim-treesitter and the configured language parsers; Lazy continues to
+manage the remaining plugins (including Tree-sitter text objects and context)
+during this migration phase.
 
 Project-specific formatters such as Darker remain discoverable through `PATH`
 and can be supplied by a Direnv development shell without becoming global home
