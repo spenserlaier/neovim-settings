@@ -20,6 +20,7 @@
     jq
     lazygit
     ripgrep
+    ranger
     sd
     tree
     tree-sitter
@@ -140,5 +141,6 @@
       executable = true;
     };
     "nvim".source = ../nvim;
+    "ranger".source = ../ranger;
   };
 }
