@@ -1,91 +1,47 @@
 #!/usr/bin/env bash
-set -e
-export PATH="$HOME/.local/bin:$PATH"  # ensure current shell sees it
-if ! command -v mise >/dev/null; then
-  curl https://mise.run | sh
-fi
+set -euo pipefail
 
-# Install homebrew if necessary (installs additional software not available with mise)
-if ! command -v brew >/dev/null 2>&1; then
-  echo "Installing Homebrew..."
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64)
+    home_target='spenser@macos'
+    nix_install_args=()
+    ;;
+  Linux-x86_64)
+    home_target='spenser@linux'
+    nix_install_args=(--daemon)
+    ;;
+  *)
+    echo "Unsupported installation host: $(uname -s)-$(uname -m)" >&2
+    exit 1
+    ;;
+esac
 
-  # Add brew to PATH immediately
-  if [[ "$(uname -s)" == "Linux" ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-  else
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+if ! command -v nix >/dev/null 2>&1; then
+  echo 'Installing Nix using the official multi-user installer...'
+  curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install |
+    sh -s -- "${nix_install_args[@]}"
+
+  nix_profile='/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+  if [[ -r "$nix_profile" ]]; then
+    # shellcheck disable=SC1090
+    source "$nix_profile"
   fi
 fi
 
-# Get the directory of this script, even if called from elsewhere
-DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Install additional software via Brewfile
-brew bundle --file="$DOTFILES/Brewfile"
-# Neovim
-mkdir -p ~/.config
-ln -sfn "$DOTFILES/nvim" ~/.config/nvim
-
-# Create the directory neovim uses to store undo information persistently
-mkdir -p ~/.local/state/nvim/undo
-
-
-# Tmux
-ln -sf "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
-# install tmux plugin manager
-if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-fi
-# Run the headless plugin installer (replaces prefix + I)
-~/.tmux/plugins/tpm/bin/install_plugins
-
-# Atuin
-mkdir -p ~/.config/atuin
-ln -sf "$DOTFILES/atuin/config.toml" ~/.config/atuin/config.toml
-
-# Ranger
-rm -rf ~/.config/ranger
-ln -sfn "$DOTFILES/ranger" ~/.config/ranger
-# Starship
-ln -sfn "$DOTFILES/starship/starship.toml" ~/.config/starship.toml
-# Kitty
-rm -rf ~/.config/kitty
-ln -sfn "$DOTFILES/kitty" ~/.config/kitty
-# Miniflux
-rm -rf ~/.config/miniflux
-ln -sfn "$DOTFILES/miniflux" ~/.config/miniflux
-# Fish
-mkdir -p ~/.config/fish
-#ln -sf "$DOTFILES/fish/config.fish" ~/.config/fish/config.fish
-# The line below symlinks the whole fish directory, which also installs functions
-# avoid nesting issues by removing existing dir 
-if [ -e ~/.config/fish ]; then
-  rm -rf ~/.config/fish
-fi
-ln -s "$DOTFILES/fish" ~/.config/fish
-# Mise
-ln -sf "$DOTFILES/mise/.mise.toml" ~/.mise.toml
-mise install
-# Git
-GITCONFIG_SOURCE="$DOTFILES/git/.gitconfig"
-GITCONFIG_DEST="$HOME/.gitconfig"
-
-# Ensure source exists
-if [ ! -f "$GITCONFIG_SOURCE" ]; then
-  echo "Error: expected gitconfig at $GITCONFIG_SOURCE"
+if ! command -v nix >/dev/null 2>&1; then
+  echo 'Nix was installed, but is not available in this shell.' >&2
+  echo 'Open a new shell and run ./install.sh again.' >&2
   exit 1
 fi
 
-# Backup existing gitconfig if it isn't already a symlink
-if [ -e "$GITCONFIG_DEST" ] && [ ! -L "$GITCONFIG_DEST" ]; then
-  BACKUP_PATH="$GITCONFIG_DEST.$(date +%Y%m%d%H%M%S).bak"
-  echo "Backing up existing gitconfig → $BACKUP_PATH"
-  mv "$GITCONFIG_DEST" "$BACKUP_PATH"
+flake="path:$repo_root#$home_target"
+
+if command -v home-manager >/dev/null 2>&1; then
+  home-manager switch --flake "$flake"
+else
+  nix run home-manager/master -- switch --flake "$flake"
 fi
 
-# Create/update symlink
-ln -sf "$GITCONFIG_SOURCE" "$GITCONFIG_DEST"
-
-echo "Dotfiles and tools installed!"
+echo "Home Manager configuration activated: $home_target"
