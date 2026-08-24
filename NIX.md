@@ -1,7 +1,7 @@
 # Home Manager
 
-This repository is migrating incrementally from the existing Homebrew, Mise,
-and symlink installer to a flake-based Home Manager configuration.
+This repository uses a flake-based Home Manager configuration for its portable
+command-line and editor environment.
 
 The common module installs the command-line and editor packages. Home Manager
 also owns the Git, Jujutsu, Atuin, and Starship configurations through their
@@ -11,19 +11,18 @@ directly in the Home Manager module.
 
 Fish is managed through its native module. Shared interactive behavior lives in
 `fish/interactive.fish`; Home Manager embeds that file in its generated Fish
-configuration and generates the Atuin and Starship integrations. The legacy
-`fish/config.fish` sources the same shared file and initializes those integrations
-itself, so the pre-Nix installer remains usable during the migration.
+configuration and generates the Atuin and Starship integrations.
 
-Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv has
-been removed. Mise is no longer initialized or added to Fish's path, although
-its legacy installer artifacts remain temporarily; its language runtimes are
-not part of this Home Manager configuration.
+Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv and
+Mise are not part of this configuration; project runtimes belong in development
+shells instead.
 
 Tmux is managed through its native module. `tmux/common.conf` contains the shared
 configuration, while Home Manager supplies pinned Resurrect and Continuum
-plugins. The legacy `tmux/tmux.conf` sources the same shared configuration and
-retains TPM bootstrap support only for the pre-Nix installer.
+plugins.
+
+Ranger is installed by Nix, and Home Manager links the repository's existing
+Ranger configuration into `~/.config/ranger`.
 
 Neovim is installed through its native module and is the default editor. Its
 configuration is copied into the Nix store and linked at `~/.config/nvim`, while
@@ -37,6 +36,26 @@ during this migration phase.
 Project-specific formatters such as Darker remain discoverable through `PATH`
 and can be supplied by a Direnv development shell without becoming global home
 packages.
+
+## Install
+
+On Apple Silicon macOS or x86-64 Linux, run:
+
+```sh
+./install.sh
+```
+
+When necessary, the script installs Nix using the official multi-user installer.
+It then activates the matching flake target with Home Manager. The first run
+uses Home Manager's documented `nix run` bootstrap; subsequent runs use the
+`home-manager` command installed by this configuration.
+
+Kitty and the preferred fonts remain an optional macOS layer. On a machine with
+Homebrew installed, install them separately with:
+
+```sh
+brew bundle --file Brewfile
+```
 
 ## Verify
 
