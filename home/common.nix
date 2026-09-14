@@ -140,6 +140,10 @@
       source = ../fish/tmux-sessionizer.fish;
       executable = true;
     };
+    "kitty" = {
+      source = ../kitty;
+      force = true;
+    };
     "nvim".source = ../nvim;
     "ranger".source = ../ranger;
   };

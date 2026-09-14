@@ -24,6 +24,10 @@ plugins.
 Ranger is installed by Nix, and Home Manager links the repository's existing
 Ranger configuration into `~/.config/ranger`.
 
+Home Manager links the repository's Kitty configuration into `~/.config/kitty`.
+Kitty itself and the preferred fonts remain part of the optional macOS Homebrew
+layer.
+
 Neovim is installed through its native module and is the default editor. Its
 configuration is copied into the Nix store and linked at `~/.config/nvim`, while
 native build and search dependencies are included in Neovim's wrapped runtime.
@@ -50,8 +54,8 @@ It then activates the matching flake target with Home Manager. The first run
 uses Home Manager's documented `nix run` bootstrap; subsequent runs use the
 `home-manager` command installed by this configuration.
 
-Kitty and the preferred fonts remain an optional macOS layer. On a machine with
-Homebrew installed, install them separately with:
+Kitty and the preferred fonts are installed on macOS through Homebrew. On a
+machine with Homebrew installed, install them with:
 
 ```sh
 brew bundle --file Brewfile
