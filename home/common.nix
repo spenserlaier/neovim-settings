@@ -142,6 +142,7 @@
     };
     "kitty" = {
       source = ../kitty;
+      recursive = true;
       force = true;
     };
     "nvim".source = ../nvim;
