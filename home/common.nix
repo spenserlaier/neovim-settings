@@ -47,6 +47,9 @@
         if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
           source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
         end
+        if test -d "$HOME/.nix-profile/bin"
+          set -gx PATH "$HOME/.nix-profile/bin" (string match -v -- "$HOME/.nix-profile/bin" $PATH)
+        end
       '';
       interactiveShellInit = builtins.readFile ../fish/interactive.fish;
     };
