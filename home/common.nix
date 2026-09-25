@@ -149,11 +149,16 @@
       source = ../fish/tmux-sessionizer.fish;
       executable = true;
     };
-    "kitty" = {
-      source = ../kitty;
-      recursive = true;
+    "kitty/kitty.conf" = {
+      text = builtins.replaceStrings
+        [ "font_size 24" ]
+        [ "font_size ${if pkgs.stdenv.hostPlatform.isLinux then "20" else "24"}" ]
+        (builtins.readFile ../kitty/kitty.conf);
       force = true;
     };
+    "kitty/current-theme.conf".source = ../kitty/current-theme.conf;
+    "kitty/open-actions.conf".source = ../kitty/open-actions.conf;
+    "kitty/kitty.conf.bak".source = ../kitty/kitty.conf.bak;
     "nvim".source = ../nvim;
     "ranger".source = ../ranger;
   };
