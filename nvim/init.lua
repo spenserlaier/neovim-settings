@@ -1249,6 +1249,11 @@ vim.api.nvim_create_autocmd('FileType', {
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'markdown',
   callback = function(event)
+    vim.bo[event.buf].spelllang = 'en_us'
+    vim.wo.spell = true
+    vim.wo.wrap = true
+    vim.wo.linebreak = true
+
     local opts = { buffer = event.buf, expr = true, silent = true }
 
     vim.keymap.set('n', 'j', function()

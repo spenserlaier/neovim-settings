@@ -10,6 +10,21 @@ return {
         sh = { 'shellcheck' },
       }
 
+      local function is_prose_markdown(bufnr)
+        if vim.bo[bufnr].filetype ~= 'markdown' then
+          return false
+        end
+
+        local path = vim.api.nvim_buf_get_name(bufnr)
+        return path ~= '' and #vim.fs.find('.markdownlint-prose', { path = vim.fs.dirname(path), upward = true }) > 0
+      end
+
+      vim.api.nvim_create_user_command('MarkdownlintNow', function()
+        if vim.bo.filetype == 'markdown' then
+          lint.try_lint('markdownlint')
+        end
+      end, { desc = 'Lint the current Markdown buffer, including prose chapters' })
+
       -- To allow other plugins to add linters to require('lint').linters_by_ft,
       -- instead set linters_by_ft like this:
       -- lint.linters_by_ft = lint.linters_by_ft or {}
@@ -51,7 +66,9 @@ return {
           -- Only run the linter in buffers that you can modify in order to
           -- avoid superfluous noise, notably within the handy LSP pop-ups that
           -- describe the hovered symbol using Markdown.
-          if vim.bo.modifiable then
+          if vim.bo.modifiable and is_prose_markdown(vim.api.nvim_get_current_buf()) then
+            vim.diagnostic.reset(lint.get_namespace('markdownlint'), vim.api.nvim_get_current_buf())
+          elseif vim.bo.modifiable then
             lint.try_lint()
           end
         end,
