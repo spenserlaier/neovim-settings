@@ -43,15 +43,58 @@ packages.
 
 ## Install
 
-On Apple Silicon macOS or x86-64 Linux, run:
+### Bazzite x86-64
+
+Bazzite needs a host-visible, persistent `/nix` before Home Manager activation.
+On the tested Bazzite 44 Kinoite host, `/etc/ostree/prepare-root.conf` preserves
+the composefs and read-only sysroot settings and adds `[root] transient = true`.
+The override is tracked with `rpm-ostree initramfs-etc`, and the host is rebooted
+and checked before installing Nix. The full sequence and boot rollback are in
+[the migration checkpoint log](BAZZITE_NIX_MIGRATION_PLAN.md).
+
+Install Nix with the Determinate `ostree` planner, reviewing its proposed
+changes before accepting:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install ostree
+```
+
+Reboot and confirm that `/nix` is mounted read/write from persistent
+`/var/home/nix`, `nix --version` works, and `nix run nixpkgs#hello` succeeds in
+a normal host shell. Back up or move aside existing configuration paths that
+Home Manager will replace. In particular, an old `~/.config/fish` or
+`~/.config/kitty` symlink into this repository must be moved before activation;
+otherwise Home Manager could write links through it into the checkout. Keep
+the old links and files for rollback. The tested host backup and rollback
+script are recorded in the checkpoint log.
+
+From this checkout, run:
 
 ```sh
 ./install.sh
 ```
 
-When necessary, the script installs Nix using the official multi-user installer.
-It then activates the matching flake target with Home Manager. The first run
-uses Home Manager's documented `nix run` bootstrap; subsequent runs use the
+On Bazzite, the script refuses to install Nix through the ordinary multi-user
+installer. It requires the writable `/nix` mount backed by `/var/home/nix`, runs
+`./verify.sh`, builds the Linux activation package without a `result` symlink,
+dry runs that exact generation's activation, and then activates it. If the dry
+run finds collisions, move those paths aside after backing them up and rerun
+the script. The tested first cutover used this built-generation activation
+method; later updates can also use this command from the checkout:
+
+```sh
+home-manager switch --flake 'path:.#spenser@linux'
+```
+
+Home Manager's Fish startup sources the Determinate Nix profile when present
+and puts `~/.nix-profile/bin` first, so fresh shells use the managed tools even
+when an older desktop session still carries Mise paths.
+
+### Apple Silicon macOS and other x86-64 Linux
+
+Run `./install.sh`. When necessary, the script installs Nix using the official
+installer. It then activates the matching flake target with Home Manager. The
+first run uses Home Manager's `nix run` bootstrap; subsequent runs use the
 `home-manager` command installed by this configuration.
 
 Kitty and the preferred fonts are installed on macOS through Homebrew. On a
@@ -72,8 +115,8 @@ Home Manager or Neovim configuration:
 
 It evaluates both supported Home Manager targets, builds the current host
 without creating a `result` symlink, validates the Lazy lock file, and checks
-the Nix-wrapped Neovim tools and parsers without loading or modifying Lazy's
-runtime state.
+the Nix-wrapped Neovim tools and parsers against the built Home Manager XDG data
+tree without activating it or loading Lazy's runtime state.
 
 ## Build without activating
 

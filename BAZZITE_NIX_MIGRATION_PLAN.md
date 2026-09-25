@@ -1,30 +1,29 @@
 # Bazzite Nix migration: resume plan
 
-Updated 2026-09-25. This is a checklist for future Codex sessions and for the
-reboots required by the host installation. Stop at each checkpoint and record
-the result here before continuing. Do not run this repository's current
-`./install.sh` on Bazzite: it uses the standard Nix installer and immediately
-activates Home Manager.
+Updated 2026-09-25. This records the checkpoints and reboots used for the
+Bazzite migration. The guarded `./install.sh` now requires the tested,
+host-visible Determinate Nix installation before activating Home Manager on
+Bazzite. See [NIX.md](NIX.md) for the reusable installation path.
 
 ## Current state
 
-- Host: Bazzite 44 Kinoite, x86_64. The root is a read-only composefs overlay;
-  `/var` and `/home` are persistent. Nix and `/nix` are absent.
-- The live dotfiles checkout is this directory, currently at `master` commit
-  `163f42e` (Git HEAD detached because Jujutsu manages the working copy).
-  `~/.config/fish`, `~/.config/nvim`, `~/.config/kitty`, and
-  `~/.config/ranger` point into this checkout. Keep it on `master` during prep.
-- Local Git branch `nix-migration` is at `5e06706`, one commit ahead of
-  `origin/nix-migration`. That commit ports the Jujutsu completion fix into
-  `fish/interactive.fish`; Fish syntax and `complete -C 'jj lo'` were checked.
-  It has **not** been pushed.
-- A separate worktree is currently at `/tmp/neovim-settings-nix-migration`.
-  `/tmp` may be cleared by reboot. The *branch and commit* are stored in this
-  repository's Git data and should persist. After reboot, run `git worktree
-  list`; if the temporary worktree is gone, prune the stale entry and recreate
-  a worktree from local branch `nix-migration` before doing branch work. Do not
-  switch this live checkout to that branch.
-- Bazzite's `/usr/lib/ostree/prepare-root.conf` currently contains:
+- Host: Bazzite 44 Kinoite, x86_64. After checkpoint 1, the composefs root
+  is writable with a transient upper layer under tmpfs-backed `/run`.
+  `/etc` and `/var` remain persistent Btrfs mounts. Determinate Nix is now
+  installed; `/nix` is mounted from persistent `/home/nix`.
+- The original dotfiles checkout is this directory, still at `master` commit
+  `fdca082` (Git HEAD detached because Jujutsu manages the working copy).
+  After checkpoint 4, Home Manager owns the live Fish, Neovim, Kitty, and
+  Ranger links; this checkout remains available for rollback and must not be
+  switched to the migration branch as a shortcut.
+- Local Git branch `nix-migration` is at `5d72e88`, four commits ahead of
+  `origin/nix-migration`. It includes the Jujutsu completion fix at `5e06706`,
+  the checkpoint 3 verification fix at `eb4a347`, and two Fish startup fixes
+  tested during checkpoint 4. It has **not** been pushed.
+- The separate `/tmp/neovim-settings-nix-migration` worktree was recreated
+  after reboot and is clean at `5d72e88`. Do not switch this live checkout to
+  that branch.
+- Bazzite's `/usr/lib/ostree/prepare-root.conf` contains:
 
   ```ini
   [composefs]
@@ -33,7 +32,8 @@ activates Home Manager.
   readonly = true
   ```
 
-  There is no `/etc/ostree/prepare-root.conf` override yet.
+  The tracked `/etc/ostree/prepare-root.conf` override now adds
+  `[root] transient = true` while preserving these settings.
 
 ## Checkpoint 1: prepare the transient-root boot
 
@@ -79,7 +79,14 @@ The root mount should now be writable with a transient overlay upper layer;
 seeing `overlay` alone is insufficient because the current read-only composefs
 root also reports that filesystem type. Record the actual mount options here.
 
-**Checkpoint 1 result:** pending.
+**Checkpoint 1 result (2026-09-25): passed after reboot.** The booted
+`rpm-ostree` deployment tracks `/etc/ostree/prepare-root.conf` in the
+initramfs; the previous deployment remains available.
+The override has the exact three sections shown above. On the host,
+`findmnt -T /` reports `composefs`/`overlay` with `rw` and
+`upperdir=/run/ostree/.private/root/upper`; `/run` is `tmpfs`. `/etc` and
+`/var` are writable Btrfs mounts. The live Fish link still resolves to this
+checkout and Fish reports version 4.9.3. Nix was not installed at this point.
 
 ## Checkpoint 2: install host-visible Nix
 
@@ -108,7 +115,26 @@ Confirm `/nix` is visible to a normal host shell and backed by persistent
 `/var/home/nix`. This is the property required for Home Manager links and
 programs to work outside a Nix user namespace.
 
-**Checkpoint 2 result:** pending.
+**Checkpoint 2 result (2026-09-25): passed after reboot.** The installer
+reported success. On the host, `/nix` is a writable
+Btrfs mount sourced from `/home/nix` (the same persistent location as
+`/var/home/nix`). `nix-daemon.service` and `nix.mount` are active.
+`nix --version` reports Determinate Nix 3.22.5 / Nix 2.35.2, and
+`nix run nixpkgs#hello` printed `Hello, world!`.
+
+After reboot, the host still mounts `/nix` read/write from
+`/dev/nvme0n1p3[/home/nix]`; `nix.mount` and `nix-daemon.service` are active.
+`nix --version` still reports Determinate Nix 3.22.5 / Nix 2.35.2, and
+`nix run nixpkgs#hello` prints `Hello, world!`. The root overlay remains
+writable with its upper layer under `/run/ostree/.private/root/upper`, and the
+booted deployment still tracks `/etc/ostree/prepare-root.conf`.
+
+The installer placed a Fish startup file in `/etc/fish/conf.d`, but the
+installed Fish binaries use `/usr/etc/fish` or Homebrew's Fish configuration
+directory, so they did not read it. The live `fish/config.fish` now sources
+Nix's Fish profile script when present. Fresh Fish processes find `nix`.
+After reboot, a fresh Fish process still finds `nix`, and the live Fish link
+still resolves to this checkout.
 
 ## Checkpoint 3: build without activating
 
@@ -118,7 +144,15 @@ it evaluates both flake targets and builds/checks the Linux Home Manager
 generation without switching the live dotfiles. If it fails, fix the branch
 first. No Home Manager activation at this checkpoint.
 
-**Checkpoint 3 result:** pending.
+**Checkpoint 3 result (2026-09-25): passed.** The separate worktree contains
+`5e06706` and is clean at `eb4a347`. `./verify.sh` evaluates both Home Manager
+targets, builds the Linux generation without a result link, validates
+`nvim/lazy-lock.json`, and checks the built Neovim runtime (14 parsers and 18
+executables). The first run exposed a test setup issue: Home Manager's Neovim
+plugins live in the generated XDG data tree, which is not yet linked into the
+live home. Commit `eb4a347` points the isolated Neovim check at that built tree.
+No Home Manager activation was run; the live configuration links still resolve
+to this checkout.
 
 ## Checkpoint 4: controlled Home Manager cutover
 
@@ -131,7 +165,37 @@ for this machine, then activate at a convenient time. Check a fresh Fish shell,
 `jj` completion, Neovim startup/LSP/parsers, tmux, and Kitty before treating
 the cutover as successful.
 
-**Checkpoint 4 result:** pending.
+**Checkpoint 4 result (2026-09-25): passed.** The original links and
+conflicting files were backed up under
+`~/.local/state/nix-migration-backups/checkpoint4-20260925/`. Its `original/`
+directory preserves the old links and files; `content/` snapshots the old
+Fish, Kitty, Neovim, and Ranger directories; `displaced/` contains the moved
+live paths. The old Fish universal variables were preserved in a real
+`~/.config/fish` directory, then the obsolete Mise shims entry was removed
+from `fish_user_paths`. The original Git, Jujutsu, and tmux config files were
+moved aside so their Home Manager equivalents take effect. The unrelated
+`~/.config/git/ignore` and `~/.config/jj/repos` remain in place.
+
+`./verify.sh` and an activation dry run passed for the final configuration.
+The tested activation command was
+`/nix/store/6rbadi18xa0nawf4hr73ilicwfwgvd95-home-manager-generation/activate`;
+it completed successfully and is the current Home Manager generation. No
+`./install.sh` run or Git branch switch was involved. Fresh Fish resolves
+Neovim, Jujutsu, and tmux from `~/.nix-profile/bin` and Nix from the
+Determinate profile; `complete -C 'jj lo'` offers `log`. Live Neovim starts,
+loads Nix Tree-sitter and the Lua parser, and attaches `lua_ls` to a Lua file.
+An isolated tmux server loaded the new config with `C-a` prefix and Continuum
+enabled. Kitty parsed the new config with zero errors. Git and Jujutsu report
+the expected user name. The first activation noted a pre-existing failed
+rootless `docker.service` user unit during systemd reload; activation still
+completed, and the final update completed without that warning.
+
+For rollback, run
+`bash ~/.local/state/nix-migration-backups/checkpoint4-20260925/rollback.sh`
+in a host shell, then open a fresh shell and restart Kitty/tmux. The script
+moves the active Home Manager links into `activated-on-rollback/` and restores
+the original links and files from `original/`. It leaves the Nix installation
+and Home Manager generation available for diagnosis.
 
 ## Checkpoint 5: repository cleanup
 
