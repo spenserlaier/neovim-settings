@@ -17,6 +17,7 @@
     fzf
     fx
     gnumake
+    jj-starship
     jq
     lazygit
     ripgrep

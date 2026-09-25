@@ -13,6 +13,11 @@ Fish is managed through its native module. Shared interactive behavior lives in
 `fish/interactive.fish`; Home Manager embeds that file in its generated Fish
 configuration and generates the Atuin and Starship integrations.
 
+Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
+Git repositories. The built-in Git modules are disabled so colocated Jujutsu
+workspaces show one version-control segment. The package is pinned by this
+repository's nixpkgs lock file; no separate flake input is needed.
+
 Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv and
 Mise are not part of this configuration; project runtimes belong in development
 shells instead.
