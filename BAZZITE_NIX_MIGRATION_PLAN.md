@@ -1,4 +1,4 @@
-# Bazzite Nix migration: resume plan
+# Bazzite Nix migration: checkpoint record
 
 Updated 2026-09-25. This records the checkpoints and reboots used for the
 Bazzite migration. The guarded `./install.sh` now requires the tested,
@@ -11,18 +11,14 @@ Bazzite. See [NIX.md](NIX.md) for the reusable installation path.
   is writable with a transient upper layer under tmpfs-backed `/run`.
   `/etc` and `/var` remain persistent Btrfs mounts. Determinate Nix is now
   installed; `/nix` is mounted from persistent `/home/nix`.
-- The original dotfiles checkout is this directory, still at `master` commit
-  `fdca082` (Git HEAD detached because Jujutsu manages the working copy).
-  After checkpoint 4, Home Manager owns the live Fish, Neovim, Kitty, and
-  Ranger links; this checkout remains available for rollback and must not be
-  switched to the migration branch as a shortcut.
-- Local Git branch `nix-migration` is at `5d72e88`, four commits ahead of
-  `origin/nix-migration`. It includes the Jujutsu completion fix at `5e06706`,
-  the checkpoint 3 verification fix at `eb4a347`, and two Fish startup fixes
-  tested during checkpoint 4. It has **not** been pushed.
-- The separate `/tmp/neovim-settings-nix-migration` worktree was recreated
-  after reboot and is clean at `5d72e88`. Do not switch this live checkout to
-  that branch.
+- The primary dotfiles checkout is a Jujutsu working copy based on the local
+  `master` branch. Home Manager owns the live Fish, Neovim, Kitty, and Ranger
+  links in the Nix store; the original links and files remain in the checkpoint
+  4 backup.
+- Local `master` contains the tested migration and the original checkpoint
+  history. The `nix-migration` branch remains as a local reference to the
+  tested cutover. Its temporary `/tmp/neovim-settings-nix-migration` worktree
+  was used for isolated verification and branch reconciliation.
 - Bazzite's `/usr/lib/ostree/prepare-root.conf` contains:
 
   ```ini
@@ -204,6 +200,21 @@ the generic Linux installer cannot accidentally use the ordinary multi-user
 installer here. After the host has run well, reconcile branch history and make
 the tested `nix-migration` branch the new `master`. Do not merge/promote it
 merely because Nix installed successfully.
+
+**Checkpoint 5 result (2026-09-25): passed locally.** `install.sh` now detects
+Bazzite and refuses to run the ordinary multi-user Nix installer. It requires
+the writable host `/nix` mount backed by `/var/home/nix`, runs `./verify.sh`,
+builds the matching activation package, dry runs it, and then activates it.
+The script's executable bit was fixed, and `./install.sh` completed successfully
+on this host. [NIX.md](NIX.md) documents the tested Bazzite path and the
+checkpoint 4 backup/rollback location.
+
+The original `master` history was merged into `nix-migration`. The Fish merge
+conflict was resolved in favor of the tested Home Manager configuration.
+Local `master` was fast-forwarded to the tested result, and the primary
+Jujutsu working copy was advanced to it. The temporary pre-cutover Fish change
+is retained in Jujutsu history and the checkpoint backup; its behavior is now
+provided by `home/common.nix`.
 
 ## References
 
