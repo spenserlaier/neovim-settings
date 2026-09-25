@@ -52,5 +52,12 @@ pyenv virtualenv-init - | source
 
 bind -M insert \t atuin_or_complete
 set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense' # optional
+
+set -gx CARAPACE_EXCLUDES jj
 carapace _carapace | source
+
+COMPLETE=fish jj | source
+
+# end is_interactive block
 end
+
