@@ -34,6 +34,7 @@
     atuin = {
       enable = true;
       enableFishIntegration = true;
+      package = import ./atuin-package.nix { inherit pkgs; };
       settings = builtins.fromTOML (builtins.readFile ../atuin/config.toml);
     };
 
