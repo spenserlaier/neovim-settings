@@ -28,6 +28,10 @@ echo "Checking tracked data files..."
 jq empty nvim/lazy-lock.json
 
 echo "Checking the Nix-wrapped Neovim runtime..."
-"$generation/home-path/bin/nvim" --headless -u NONE -l scripts/verify-neovim.lua
+# Home Manager installs Neovim plugins in its XDG data tree at activation.
+# Point this isolated check at the built tree so it can inspect those plugins
+# without changing the live home directory.
+XDG_DATA_HOME="$generation/home-files/.local/share" \
+  "$generation/home-path/bin/nvim" --headless -u NORC -l scripts/verify-neovim.lua
 
 echo "Verification passed."
