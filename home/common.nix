@@ -43,6 +43,11 @@
 
     fish = {
       enable = true;
+      shellInit = ''
+        if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
+        end
+      '';
       interactiveShellInit = builtins.readFile ../fish/interactive.fish;
     };
 
