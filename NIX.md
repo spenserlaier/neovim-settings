@@ -32,6 +32,11 @@ Ranger configuration into `~/.config/ranger`.
 Home Manager links the repository's Kitty configuration into `~/.config/kitty`.
 Kitty itself and the preferred fonts remain part of the optional macOS Homebrew
 layer.
+Kitty loads the Catppuccin Mocha palette from `kitty/current-theme.conf`. Its
+ANSI colors are used by shell programs, including `jj-starship`; tmux does not
+define a separate palette. Neovim selects Catppuccin independently in
+`nvim/init.lua`. Kitty maps the Jujutsu empty-description symbol (`∅`) to
+FiraCode Nerd Font Mono because CaskaydiaCove does not contain that glyph.
 
 Neovim is installed through its native module and is the default editor. Its
 configuration is copied into the Nix store and linked at `~/.config/nvim`, while
