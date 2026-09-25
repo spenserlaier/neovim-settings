@@ -48,4 +48,6 @@ end
 bind -M insert \t atuin_or_complete
 bind -M insert \cn accept-autosuggestion
 set -gx CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense'
+set -gx CARAPACE_EXCLUDES jj
 carapace _carapace fish | source
+COMPLETE=fish jj | source
