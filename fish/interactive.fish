@@ -45,6 +45,25 @@ if type -q xcrun
     set -gx SDKROOT (xcrun --show-sdk-path)
 end
 
+function rgi --description 'Interactive ripgrep with fzf + bat preview'
+    set -l rg_prefix 'rg --column --line-number --no-heading --color=always --smart-case'
+    set -l initial_query (string join ' ' $argv)
+
+    fzf \
+        --ansi \
+        --disabled \
+        --query "$initial_query" \
+        --prompt 'rg> ' \
+        --delimiter ':' \
+        --header 'Enter: print  Ctrl-O: open in nvim  Ctrl-F: fuzzy-filter' \
+        --bind "start:reload:sleep 0.1; $rg_prefix {q} || true" \
+        --bind "change:reload:sleep 0.1; $rg_prefix {q} || true" \
+        --bind 'ctrl-f:unbind(change,ctrl-f)+change-prompt(fzf> )+enable-search+clear-query' \
+        --bind 'ctrl-o:become(nvim +{2} {1})' \
+        --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
+        --preview-window 'right,60%,border-left,+{2}+3/3,~3'
+end
+
 bind -M insert \t atuin_or_complete
 bind -M insert \cn accept-autosuggestion
 set -gx CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense'
