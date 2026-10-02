@@ -223,7 +223,7 @@ jj-starship | awk -v width="$width" '
 '
 '''
 shell = ["sh"]
-format = " \n$output "
+format = " $output "
 
 [git_branch]
 disabled = true
