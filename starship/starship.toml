@@ -1,4 +1,5 @@
 "$schema" = 'https://starship.rs/config-schema.json'
+format = "$all(\n${custom.jj})$line_break$character"
 
 [aws]
 symbol = " "
