@@ -686,6 +686,31 @@ require('lazy').setup({
       }
 
       vim.lsp.enable(servers)
+
+      -- Racket is optional and managed outside Home Manager. Only probe for its
+      -- language server when opening Racket, and quietly skip it if unavailable.
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'racket',
+        once = true,
+        callback = function()
+          local racket = vim.fn.exepath 'racket'
+          if racket == '' then
+            return
+          end
+
+          vim.system({ racket, '-e', '(collection-file-path "main.rkt" "racket-langserver")' }, { timeout = 5000 }, function(result)
+            if result.code == 0 then
+              vim.schedule(function()
+                vim.lsp.config('racket_langserver', {
+                  cmd = { racket, '--lib', 'racket-langserver' },
+                  filetypes = { 'racket' },
+                })
+                vim.lsp.enable 'racket_langserver'
+              end)
+            end
+          end)
+        end,
+      })
     end,
   },
 
@@ -709,7 +734,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { cpp = true, javascript = true, javascriptreact = true, typescriptreact = true, typescript = true }
+        local disable_filetypes = { cpp = true, javascript = true, javascriptreact = true, typescriptreact = true, typescript = true, racket = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
