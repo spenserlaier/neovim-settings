@@ -4,6 +4,14 @@
   # Keep this at the version used for the first Home Manager activation.
   home.stateVersion = "26.05";
 
+  # Use Readline/libedit editing in Python instead of the newer PyREPL.
+  home.sessionVariables.PYTHON_BASIC_REPL = "1";
+
+  # libedit uses a separate configuration from GNU Readline (notably on macOS).
+  home.file.".editrc".text = ''
+    bind -v
+  '';
+
   # General-purpose command-line tools available outside program-specific
   # wrappers as well as inside editors and shells.
   home.packages = with pkgs; [
@@ -126,6 +134,11 @@
         unzip
         yaml-language-server
       ];
+    };
+
+    readline = {
+      enable = true;
+      variables.editing-mode = "vi";
     };
 
     starship = {

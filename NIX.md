@@ -13,6 +13,19 @@ Fish is managed through its native module. Shared interactive behavior lives in
 `fish/interactive.fish`; Home Manager embeds that file in its generated Fish
 configuration and generates the Atuin and Starship integrations.
 
+CLI input uses basic vi bindings: Fish configures its own editor, the native
+Readline module generates `~/.inputrc`, and Home Manager also generates
+`~/.editrc` for libedit clients. This covers tools such as `psql` regardless of
+which of those libraries they use. Press Escape to enter command mode and `i`
+to return to insert mode.
+
+`PYTHON_BASIC_REPL=1` selects Python's traditional REPL so it uses these input
+settings, trading PyREPL's newer multiline editing interface for vi bindings.
+After activation, start a fresh login session to pick up the environment change.
+For Racket's XREPL, enter `,input readline` once and restart Racket; XREPL saves
+that preference itself. Its default expression editor does not use these files.
+Other CLIs with their own input editors may need their own vi-mode setting.
+
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
 Git repositories. The built-in Git modules are disabled so colocated Jujutsu
 workspaces show one version-control segment. The package is pinned by this
