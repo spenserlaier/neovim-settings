@@ -46,7 +46,7 @@ if type -q xcrun
 end
 
 function rgi --description 'Interactive ripgrep with fzf + bat preview'
-    set -l rg_prefix 'rg --column --line-number --no-heading --color=always --smart-case'
+    set -l rg_prefix 'rg --column --line-number --no-heading --color=always --smart-case --hidden --no-ignore-exclude --glob "!.git/**"'
     set -l initial_query (string join ' ' $argv)
 
     fzf \
@@ -62,6 +62,18 @@ function rgi --description 'Interactive ripgrep with fzf + bat preview'
         --bind 'ctrl-o:become(nvim +{2} {1})' \
         --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
         --preview-window 'right,60%,border-left,+{2}+3/3,~3'
+end
+
+function fdi --description 'Fuzzy file picker with fzf + bat preview'
+    set -l initial_query (string join ' ' $argv)
+
+    rg --files --hidden --no-ignore-exclude --glob '!.git/**' | fzf \
+        --query "$initial_query" \
+        --prompt 'files> ' \
+        --header 'Enter: print  Ctrl-O: open in nvim' \
+        --bind 'ctrl-o:become(nvim {})' \
+        --preview 'bat --color=always --style=numbers -- {}' \
+        --preview-window 'right,60%,border-left'
 end
 
 bind -M insert \t atuin_or_complete
