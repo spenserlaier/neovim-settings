@@ -1,5 +1,11 @@
 #!/usr/bin/env fish
 
+# --sessions only visits sessions that already exist, including detached ones.
+if test (count $argv) -eq 1; and test "$argv[1]" = --sessions
+    fish (status dirname)/tmux-picker.fish --sessions
+    exit $status
+end
+
 # 1. If an argument is passed, use it. Otherwise, use fzf to pick a directory.
 if test (count $argv) -eq 1
     set selected $argv[1]

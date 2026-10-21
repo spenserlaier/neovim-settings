@@ -55,6 +55,21 @@ Tmux is managed through its native module. `tmux/common.conf` contains the share
 configuration, while Home Manager supplies pinned Resurrect and Continuum
 plugins.
 
+With the `Ctrl-a` prefix, `f` searches existing tmux sessions, including detached
+sessions, showing their directories, window counts, and attachment status.
+Numeric session names are displayed with their starting directory's basename
+(for example, `neovim-settings (session 10)`); custom names are preserved.
+`F` searches directories and opens or creates a project session named after
+the directory. Plain `tmux`/`new-session` creation can still assign numeric names.
+`g` opens the current session's window picker with command and directory labels,
+and `r` reloads the tmux configuration.
+
+Both existing-session and window pickers have a large, color-preserving preview
+of the selected item's active pane. Session previews also list its windows.
+The preview moves below the list in narrow popups; `Ctrl-/` toggles it.
+Previews capture terminal contents when the selection changes, without sending
+input to the process. They do not continuously refresh or combine split panes.
+
 Ranger is installed by Nix, and Home Manager links the repository's existing
 Ranger configuration into `~/.config/ranger`.
 

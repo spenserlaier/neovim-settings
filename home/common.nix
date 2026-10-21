@@ -169,6 +169,10 @@
       source = ../fish/tmux-sessionizer.fish;
       executable = true;
     };
+    "fish/tmux-picker.fish" = {
+      source = ../fish/tmux-picker.fish;
+      executable = true;
+    };
     "kitty/kitty.conf" = {
       text = builtins.replaceStrings
         [ "font_size 24" ]
