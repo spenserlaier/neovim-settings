@@ -26,6 +26,10 @@
     fx
     gnumake
     jj-starship
+    (writeScriptBin "jj-remote-prompt" ''
+      #!${python3}/bin/python3
+      ${builtins.readFile ../starship/jj-remote-prompt.py}
+    '')
     jq
     lazygit
     ripgrep

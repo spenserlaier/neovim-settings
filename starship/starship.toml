@@ -1,5 +1,5 @@
 "$schema" = 'https://starship.rs/config-schema.json'
-format = "$all(\n${custom.jj})$line_break$character"
+format = "$all(\n${custom.jj})(\n${custom.jj_remote})$line_break$character"
 
 [aws]
 symbol = " "
@@ -225,6 +225,13 @@ jj-starship | awk -v width="$width" '
 '''
 shell = ["sh"]
 format = " $output "
+
+[custom.jj_remote]
+when = "jj root --ignore-working-copy >/dev/null 2>&1"
+command = "jj-remote-prompt"
+shell = ["sh"]
+# Catppuccin Mocha peach; separate from the terminal's standard ANSI colors.
+format = "( [☁ $output](fg:#fab387))"
 
 [git_branch]
 disabled = true
