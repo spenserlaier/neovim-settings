@@ -164,6 +164,7 @@
   };
 
   xdg.configFile = {
+    "fish/functions/vi_fzf.fish".source = ../fish/functions/vi_fzf.fish;
     "fish/functions/nvimvenv.fish".source = ../fish/functions/nvimvenv.fish;
     "fish/tmux-sessionizer.fish" = {
       source = ../fish/tmux-sessionizer.fish;

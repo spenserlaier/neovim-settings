@@ -21,8 +21,10 @@ def check():
         log = directory / "calls.jsonl"
         rows = directory / "rows"
         env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}",
-                   PICKER_LOG=str(log), PICKER_ROWS=str(rows), PICKER_QUERY="")
+                   PICKER_LOG=str(log), PICKER_ROWS=str(rows), PICKER_QUERY="",
+                   PICKER_ACTION_FILE=str(directory / 'action'), FZF_DEFAULT_OPTS="")
         env.pop("TMUX", None)
+        env.pop("TMUX_PANE", None)
 
         def tmux(*args):
             return subprocess.check_output(
@@ -44,21 +46,42 @@ import os, subprocess, sys
 data = sys.stdin.read()
 with open(os.environ['PICKER_ROWS'], 'w') as f:
     f.write(data)
-result = subprocess.run([{FZF!r}, *sys.argv[1:], '--filter', os.environ['PICKER_QUERY']],
+args = [arg for arg in sys.argv[1:] if arg not in ('--expect=ctrl-x', '--print-query')]
+action = ''
+if os.environ.get('PICKER_DELETE'):
+    from pathlib import Path
+    marker = Path(os.environ['PICKER_ACTION_FILE'])
+    if marker.exists():
+        sys.exit(130)
+    marker.touch()
+    action = 'ctrl-x'
+result = subprocess.run([{FZF!r}, *args, '--filter', os.environ['PICKER_QUERY']],
                         input=data, text=True, capture_output=True)
 if result.returncode not in (0, 1):
     sys.stderr.write(result.stderr)
     sys.exit(result.returncode)
 if result.stdout:
+    if '--expect=ctrl-x' in sys.argv:
+        print(os.environ['PICKER_QUERY'])
+        print(action)
     print(result.stdout.splitlines()[0])
 ''')
         for name in ("tmux", "fzf"):
             (directory / name).chmod(0o755)
 
-        def picker(*args):
+        def picker(*args, answer=""):
             return subprocess.check_output(
                 ["fish", "--no-config", str(ROOT / "fish/tmux-picker.fish"), *args],
-                env=env, text=True)
+                env=env, text=True, input=answer)
+
+        def delete(query, answer):
+            env['PICKER_QUERY'] = query
+            env['PICKER_DELETE'] = '1'
+            Path(env['PICKER_ACTION_FILE']).unlink(missing_ok=True)
+            try:
+                return picker('--sessions', answer=answer)
+            finally:
+                env.pop('PICKER_DELETE')
 
         try:
             sid = tmux("-f", "/dev/null", "new-session", "-d", "-P", "-F",
@@ -72,7 +95,7 @@ if result.stdout:
                     break
                 time.sleep(0.02)
 
-            env["PICKER_QUERY"] = "neovim-settings (session 10)"
+            env["PICKER_QUERY"] = f"{ROOT.name} (session 10)"
             picker("--sessions")
             assert json.loads(log.read_text().splitlines()[-1]) == ["attach-session", "-t", sid]
             assert "team app" in rows.read_text()
@@ -100,7 +123,33 @@ if result.stdout:
             bindings = tmux("list-keys", "-T", "prefix")
             assert "--windows" in bindings, bindings
             assert "--sessions" in bindings, bindings
-            print("Verified session labels, scoped windows, previews, stable IDs, cancellation, and tmux config.")
+
+            # Confirmation rejects no, Escape, uppercase Y, Enter, and EOF.
+            before = log.read_text()
+            for answer in ('n', '\x1b', 'Y', '\n', ''):
+                output = delete('team app', answer)
+                assert 'LLM clients' in output and 'team app' in output
+                assert tmux('has-session', '-t', '=team app') == ''
+                assert log.read_text() == before
+            output = delete('team app', 'y')
+            assert 'last session' not in output
+            assert tmux('list-sessions', '-F', '#{session_name}') == '10'
+            assert 'team app' not in rows.read_text(), 'List did not refresh'
+
+            other = tmux('new-session', '-d', '-P', '-F', '#{session_id}',
+                         '-s', 'replacement', 'sleep 120')
+            delete(f'{ROOT.name} (session 10)', 'y')
+            assert json.loads(log.read_text().splitlines()[-1]) == [
+                'switch-client', '-t', other, ';', 'kill-session', '-t', sid]
+
+            # The switch is intercepted above; delete the last session for real.
+            tmux('kill-session', '-t', other)
+            env.pop('TMUX')
+            output = delete(f'{ROOT.name} (session 10)', 'y')
+            assert 'last session; you will leave tmux' in output
+            result = subprocess.run([TMUX, '-S', socket, 'list-sessions'], capture_output=True)
+            assert result.returncode != 0
+            print("Verified previews, labels, selection, confirmation cancellation, deletion, list refresh, current-session handoff, last-session warning, and config.")
         finally:
             subprocess.run([TMUX, "-S", socket, "kill-server"], capture_output=True)
 

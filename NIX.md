@@ -26,6 +26,15 @@ For Racket's XREPL, enter `,input readline` once and restart Racket; XREPL saves
 that preference itself. Its default expression editor does not use these files.
 Other CLIs with their own input editors may need their own vi-mode setting.
 
+Repository fzf pickers share `fish/functions/vi_fzf.fish`: bare `nvim`, `rgi`,
+`fdi`, directory session creation, and the tmux session/window pickers. They
+start in insert mode. Escape enters normal mode, where `j`/`k` move down/up;
+`i` or `/` resumes typing. Normal mode hides the input while preserving the
+query and results; the border shows the mode. Enter accepts in either mode,
+and Ctrl-C cancels. Existing picker shortcuts still work, including `rgi`'s
+Ctrl-F switch from ripgrep to fuzzy filtering. This requires fzf 0.59 or newer.
+The wrapper is opt-in; plain `fzf` and Neovim Telescope keep their own bindings.
+
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
 Git repositories. The built-in Git modules are disabled so colocated Jujutsu
 workspaces show one version-control segment. The package is pinned by this
@@ -69,6 +78,14 @@ of the selected item's active pane. Session previews also list its windows.
 The preview moves below the list in narrow popups; `Ctrl-/` toggles it.
 Previews capture terminal contents when the selection changes, without sending
 input to the process. They do not continuously refresh or combine split panes.
+
+In the session picker, `Ctrl-x` requests deletion of the highlighted session.
+The confirmation names the session and directory, shows its window count, and
+warns that all its processes will terminate. Only lowercase `y` confirms;
+Escape, any other key, or end-of-input cancels. The list refreshes afterward
+and keeps the search query. Deleting the current session switches to another
+session first and closes the picker; deleting the last session leaves tmux,
+with an additional warning in the confirmation.
 
 Ranger is installed by Nix, and Home Manager links the repository's existing
 Ranger configuration into `~/.config/ranger`.

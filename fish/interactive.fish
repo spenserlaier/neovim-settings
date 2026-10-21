@@ -13,7 +13,6 @@ set -g fish_key_bindings fish_vi_key_bindings
 zoxide init fish | source
 alias cd="z"
 
-set -gx FZF_DEFAULT_OPTS "--bind 'ctrl-j:down,ctrl-k:up'"
 alias cat="bat"
 
 function ls
@@ -25,7 +24,7 @@ function nvim
     if count $argv > /dev/null
         command nvim $argv
     else
-        set file (fzf)
+        set file (vi_fzf)
         if test -n "$file"
             command nvim $file
         end
@@ -49,7 +48,7 @@ function rgi --description 'Interactive ripgrep with fzf + bat preview'
     set -l rg_prefix 'rg --column --line-number --no-heading --color=always --smart-case --hidden --no-ignore-exclude --glob "!.git/**"'
     set -l initial_query (string join ' ' $argv)
 
-    fzf \
+    vi_fzf \
         --ansi \
         --disabled \
         --query "$initial_query" \
@@ -67,7 +66,7 @@ end
 function fdi --description 'Fuzzy file picker with fzf + bat preview'
     set -l initial_query (string join ' ' $argv)
 
-    rg --files --hidden --no-ignore-exclude --glob '!.git/**' | fzf \
+    rg --files --hidden --no-ignore-exclude --glob '!.git/**' | vi_fzf \
         --query "$initial_query" \
         --prompt 'files> ' \
         --header 'Enter: print  Ctrl-O: open in nvim' \

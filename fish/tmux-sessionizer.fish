@@ -10,11 +10,12 @@ end
 if test (count $argv) -eq 1
     set selected $argv[1]
 else
+    source (status dirname)/functions/vi_fzf.fish
     # Increased depth to 4 so it actually finds nested git repositories
-    set selected (fd . ~/Documents ~/Desktop -t d -d 4 2>/dev/null | fzf)
+    set selected (fd . ~/Documents ~/Desktop -t d -d 4 2>/dev/null | vi_fzf)
 end
 
-# 2. If you hit escape in fzf, exit cleanly
+# 2. If the picker is cancelled, exit cleanly.
 if test -z "$selected"
     exit 0
 end
