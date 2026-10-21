@@ -33,7 +33,7 @@ repository's nixpkgs lock file; no separate flake input is needed.
 
 `jj hist` shows the current change's ancestors and descendants without the
 default log's revision filtering. The Starship local bookmark row keeps its
-existing comma-based wrapping. A separate peach (`#fab387`) `☁ remote` row shows remote
+existing comma-based wrapping. A separate peach (`#fab387`) `↗ remote` row shows remote
 bookmarks within ten ancestor edges of the working copy, plus remote
 counterparts of local bookmarks in that range. It excludes synthetic `@git`
 refs, includes remote-only bookmarks, and reflects the last fetched state.
@@ -59,8 +59,21 @@ Ranger is installed by Nix, and Home Manager links the repository's existing
 Ranger configuration into `~/.config/ranger`.
 
 Home Manager links the repository's Kitty configuration into `~/.config/kitty`.
-Kitty itself and the preferred fonts remain part of the optional macOS Homebrew
-layer.
+Kitty itself remains part of the optional macOS Homebrew layer. Home Manager
+installs CaskaydiaCove Nerd Font, FiraCode Nerd Font, and Noto Sans Symbols 2
+through `home/fonts.nix`. On macOS its native font module copies them into
+`~/Library/Fonts/HomeManager`; on Linux the Fontconfig module exposes them.
+Existing Homebrew-installed fonts are left in place during this migration.
+
+Kitty keeps CaskaydiaCove for text and Nerd Font icons. Home Manager generates
+`kitty/symbol-fonts.conf` from Noto's actual character coverage, assigning its
+supported Unicode symbol ranges to that font. Text, private-use
+icons, box drawing, block elements, and braille retain their existing handling.
+This avoids per-character fallback fixes and mappings to characters absent from
+the font. The remote row uses a north-east arrow (`↗`, U+2197) for a simple,
+distinct silhouette, rendered by Noto Sans Symbols 2 through this mapping.
+The existing `∅` mapping to FiraCode remains for a symbol outside Noto's coverage.
+
 Kitty loads the Catppuccin Mocha palette from `kitty/current-theme.conf`. Its
 ANSI colors are used by shell programs, including `jj-starship`; tmux does not
 define a separate palette. Neovim selects Catppuccin independently in
@@ -139,8 +152,8 @@ installer. It then activates the matching flake target with Home Manager. The
 first run uses Home Manager's `nix run` bootstrap; subsequent runs use the
 `home-manager` command installed by this configuration.
 
-Kitty and the preferred fonts are installed on macOS through Homebrew. On a
-machine with Homebrew installed, install them with:
+Kitty is installed on macOS through Homebrew; fonts are installed by Home
+Manager. On a machine with Homebrew installed, install Kitty with:
 
 ```sh
 brew bundle --file Brewfile

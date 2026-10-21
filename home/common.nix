@@ -1,6 +1,8 @@
 { pkgs, ... }:
 
 {
+  imports = [ ./fonts.nix ];
+
   # Keep this at the version used for the first Home Manager activation.
   home.stateVersion = "26.05";
 
