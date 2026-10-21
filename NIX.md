@@ -73,6 +73,12 @@ the directory. Plain `tmux`/`new-session` creation can still assign numeric name
 `g` opens the current session's window picker with command and directory labels,
 and `r` reloads the tmux configuration.
 
+Outside tmux, Fish also accepts `Ctrl-a`, `f` to attach to an existing session,
+and `Ctrl-a`, `Shift-f` to choose a project directory before creating or
+attaching to its session. Both shortcuts work in insert and normal mode.
+Cancelling a picker returns to the current shell prompt without creating a
+session. No preliminary tmux session is needed.
+
 Both existing-session and window pickers have a large, color-preserving preview
 of the selected item's active pane. Session previews also list its windows.
 The preview moves below the list in narrow popups; `Ctrl-/` toggles it.

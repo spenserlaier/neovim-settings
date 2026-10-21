@@ -75,6 +75,17 @@ function fdi --description 'Fuzzy file picker with fzf + bat preview'
         --preview-window 'right,60%,border-left'
 end
 
+function __tmux_sessionizer
+    fish "$__fish_config_dir/tmux-sessionizer.fish" $argv
+    commandline -f repaint
+end
+
+# Match the tmux prefix shortcuts when starting from a plain Fish shell.
+for mode in insert default
+    bind -M $mode \caf '__tmux_sessionizer --sessions'
+    bind -M $mode \caF __tmux_sessionizer
+end
+
 bind -M insert \t atuin_or_complete
 bind -M insert \cn accept-autosuggestion
 set -gx CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense'
