@@ -17,14 +17,15 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def check(keys, expected, options="", query="", status=0):
+def check(keys, expected, options="", query="", status=0, rows=("alpha", "beta", "jki/")):
     with tempfile.TemporaryDirectory(prefix="vi-fzf-") as temporary:
         directory = Path(temporary)
         output = directory / "output"
         script = directory / "picker.fish"
         script.write_text(
             f"source {shlex.quote(str(ROOT / 'fish/functions/vi_fzf.fish'))}\n"
-            "printf '%s\\n' alpha beta jki/ | vi_fzf --reverse --no-clear "
+            "printf '%s\\n' " + " ".join(shlex.quote(row) for row in rows)
+            + " | vi_fzf --reverse --no-clear "
             f"--query {shlex.quote(query)} {options} > {shlex.quote(str(output))}\n"
             "exit $status\n"
         )
@@ -70,7 +71,10 @@ def check(keys, expected, options="", query="", status=0):
                 drain(0.1)
             assert child_status is not None, screen.decode(errors="replace")
             assert os.waitstatus_to_exitcode(child_status) == status, screen.decode(errors="replace")
-            assert output.read_text() == expected, (keys, output.read_text(), expected)
+            actual = output.read_text()
+            if expected is not None:
+                assert actual == expected, (keys, actual, expected)
+            return actual
         finally:
             if child_status is None:
                 os.kill(pid, signal.SIGKILL)
@@ -97,7 +101,20 @@ if __name__ == "__main__":
           "be\nbeta\n", options="--disabled --print-query "
           "--bind 'change:reload(printf beta)' "
           "--bind 'ctrl-f:unbind(change,ctrl-f)+change-prompt(fzf> )+enable-search+clear-query'")
-    for keys in ([b"\x03"], [b"\x1b", b"\x03"]):
+    for keys in ([b"\x03"], [b"\x1b", b"\x03"], [b"\x1b", b"\x1b"]):
         check(keys, "", status=130)
-    print("Verified insert/normal modes, query preservation, navigation, cancellation, "
+    # More than a screen of results distinguishes half-page movement from j/k.
+    rows = [f"item {number:02}" for number in range(80)]
+    for mode_keys in ([], [b"\x1b"]):
+        output = check([*mode_keys, b"\x04", b"\r"], None,
+                       options="--print-query", query="item", rows=rows)
+        query, selected = output.splitlines()
+        assert query == "item", output
+        assert 1 < int(selected.split()[1]) < 40, output
+        check([*mode_keys, b"\x04", b"\x15", b"\r"], "item\nitem 00\n",
+              options="--print-query", query="item", rows=rows)
+        # Ctrl-D must navigate even with an empty query rather than aborting.
+        output = check([*mode_keys, b"\x04", b"\r"], None, rows=rows)
+        assert 1 < int(output.split()[1]) < 40, output
+    print("Verified insert/normal modes, query preservation, half-page navigation, cancellation, "
           "expected-key output, caller reloads, and the rgi search transition.")

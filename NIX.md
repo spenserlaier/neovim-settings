@@ -30,9 +30,11 @@ Repository fzf pickers share `fish/functions/vi_fzf.fish`: bare `nvim`, `rgi`,
 `fdi`, directory session creation, and the tmux session/window pickers. They
 start in insert mode. Escape enters normal mode, where `j`/`k` move down/up;
 `i` or `/` resumes typing. Normal mode hides the input while preserving the
-query and results; the border shows the mode. Enter accepts in either mode,
-and Ctrl-C cancels. Existing picker shortcuts still work, including `rgi`'s
-Ctrl-F switch from ripgrep to fuzzy filtering. This requires fzf 0.59 or newer.
+query and results; the border shows the mode. Escape in normal mode cancels.
+Ctrl-U/Ctrl-D move half a page up/down through results in either mode, preserving
+the query. Enter accepts in either mode, and Ctrl-C cancels. Existing picker
+shortcuts still work, including `rgi`'s Ctrl-F switch from ripgrep to fuzzy
+filtering. This requires fzf 0.59 or newer.
 The wrapper is opt-in; plain `fzf` and Neovim Telescope keep their own bindings.
 
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
