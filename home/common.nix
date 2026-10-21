@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  imports = [ ./fonts.nix ];
+  imports = [ ./fonts.nix ./opencode.nix ];
 
   # Keep this at the version used for the first Home Manager activation.
   home.stateVersion = "26.05";

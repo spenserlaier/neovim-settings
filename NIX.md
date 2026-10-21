@@ -37,6 +37,16 @@ shortcuts still work, including `rgi`'s Ctrl-F switch from ripgrep to fuzzy
 filtering. This requires fzf 0.59 or newer.
 The wrapper is opt-in; plain `fzf` and Neovim Telescope keep their own bindings.
 
+Bare `nvim` opens a filename picker under the current directory with a file
+preview. Files from Neovim's saved recent-file history appear first, followed
+by the remaining files; the usual ignore rules still apply. Enter opens the
+selected file. Ctrl-G switches to content search using the current query, and
+Enter there opens the matching line. The picker headers show these shortcuts;
+Ctrl-/ toggles previews, which move below the results in narrow terminals.
+`fdi` shares the filename preview, while standalone `fdi` and `rgi` keep Enter
+for printing a result and Ctrl-O for opening it. Passing arguments to `nvim`
+continues to invoke the editor directly.
+
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
 Git repositories. The built-in Git modules are disabled so colocated Jujutsu
 workspaces show one version-control segment. The package is pinned by this
@@ -135,6 +145,41 @@ during this migration phase.
 Project-specific formatters such as Darker remain discoverable through `PATH`
 and can be supplied by a Direnv development shell without becoming global home
 packages.
+
+## Local AI client
+
+Home Manager installs OpenCode and manages its configuration from
+`opencode/opencode.json` through `home/opencode.nix`. Run `opencode-local` in
+the directory containing the files you want to work with. It opens or reuses
+an SSH tunnel to `spenser@192.168.4.209`, forwarding client loopback port 11435
+to the desktop's loopback port 11435. This is the desktop's separate Qwen
+Ollama instance; port 11434 belongs to an older instance.
+
+The launcher uses `~/.ssh/id_ed25519_desktop` with key authentication and checks
+that `qwen3.8:27b` is available before starting OpenCode. Keys are never copied
+into the Nix store. On another device, provision its authorized SSH key and
+set `OPENCODE_OLLAMA_SSH_IDENTITY` if it has a different filename. Set
+`OPENCODE_OLLAMA_SSH_HOST` to use another SSH hostname, such as a VPN address.
+SSH host keys must already be trusted and encrypted private keys unlocked in
+an SSH agent; the launcher does not prompt for passwords. The desktop must be
+awake and reachable over the LAN or a private VPN.
+
+Only the `home` model provider is enabled, including for background model
+tasks. The custom model explicitly advertises image input and attachments to
+OpenCode, matching Qwen's vision support. The configured context is 32768
+tokens, matching the running server at
+setup, with up to 8192 output tokens. Session sharing is disabled. Tool actions
+request approval; web fetch and search are denied. These permissions are
+application controls, not an OS sandbox. Approved shell commands can still
+access the network. Files and tools
+live on the client; model context is sent to the desktop. No server settings
+are changed by this setup.
+
+The tunnel is shared between launches using a control socket under
+`~/.cache/opencode` (or `$XDG_CACHE_HOME/opencode`). To close it explicitly,
+run `opencode-local --stop-tunnel`. Plain `opencode` uses the same configuration
+but expects the tunnel to be running already. OpenCode updates are managed by
+the pinned Nix package rather than its self-updater.
 
 ## Install
 

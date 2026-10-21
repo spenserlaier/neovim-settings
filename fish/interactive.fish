@@ -24,9 +24,17 @@ function nvim
     if count $argv > /dev/null
         command nvim $argv
     else
-        set file (vi_fzf)
-        if test -n "$file"
-            command nvim $file
+        set -l selected (__nvim_files | __file_picker \
+            --prompt 'open> ' --tiebreak=index --print-query --expect=ctrl-g \
+            --header 'Enter: open · Ctrl-G: search contents · Recent files first · Ctrl-/: preview')
+        set -l picker_status $status
+        # fzf returns 1 when Ctrl-G is pressed with no filename matches.
+        if test (count $selected) -ge 2; and test "$selected[2]" = ctrl-g
+            __rgi open "$selected[1]"
+        else if test $picker_status -eq 0; and test (count $selected) -ge 3
+            command nvim -- "$selected[3]"
+        else
+            return $picker_status
         end
     end
 end
@@ -44,9 +52,46 @@ if type -q xcrun
     set -gx SDKROOT (xcrun --show-sdk-path)
 end
 
+function __nvim_files --description 'Project files, with existing Neovim history first'
+    set -l files (rg --files --hidden --no-ignore-exclude --glob '!.git/**')
+    # Read ShaDa without loading plugins or changing the history on disk.
+    set -l recent (command nvim --headless -u NONE -i NONE \
+        -c 'lua pcall(vim.cmd.rshada, {args = {vim.fn.stdpath("state") .. "/shada/main.shada"}}); for _, file in ipairs(vim.v.oldfiles) do io.write(vim.fn.fnamemodify(file, ":."), "\n") end' \
+        -c 'qa!' 2>/dev/null)
+    begin
+        for file in $recent
+            if contains -- "$file" $files
+                printf '%s\n' "$file"
+            end
+        end
+        if test (count $files) -gt 0
+            printf '%s\n' $files
+        end
+    end | awk '!seen[$0]++'
+end
+
+function __file_picker --description 'Shared filename picker with preview'
+    vi_fzf \
+        --preview 'bat --color=always --style=numbers -- {}' \
+        --preview-window 'right,60%,border-left,<100(down,60%,border-top)' \
+        --bind 'ctrl-/:toggle-preview' $argv
+end
+
 function rgi --description 'Interactive ripgrep with fzf + bat preview'
+    __rgi print $argv
+end
+
+function __rgi --description 'Content picker with caller-specific Enter action'
+    set -l mode $argv[1]
+    set -e argv[1]
     set -l rg_prefix 'rg --column --line-number --no-heading --color=always --smart-case --hidden --no-ignore-exclude --glob "!.git/**"'
     set -l initial_query (string join ' ' $argv)
+    set -l header 'Enter: print · Ctrl-O: open in nvim · Ctrl-F: fuzzy-filter · Ctrl-/: preview'
+    set -l options
+    if test "$mode" = open
+        set header 'Enter: open · Ctrl-F: fuzzy-filter · Ctrl-/: preview'
+        set options --bind 'enter:become(nvim +{2} -- {1})'
+    end
 
     vi_fzf \
         --ansi \
@@ -54,25 +99,24 @@ function rgi --description 'Interactive ripgrep with fzf + bat preview'
         --query "$initial_query" \
         --prompt 'rg> ' \
         --delimiter ':' \
-        --header 'Enter: print  Ctrl-O: open in nvim  Ctrl-F: fuzzy-filter' \
+        --header "$header" \
         --bind "start:reload:sleep 0.1; $rg_prefix {q} || true" \
         --bind "change:reload:sleep 0.1; $rg_prefix {q} || true" \
         --bind 'ctrl-f:unbind(change,ctrl-f)+change-prompt(fzf> )+enable-search+clear-query' \
-        --bind 'ctrl-o:become(nvim +{2} {1})' \
-        --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
-        --preview-window 'right,60%,border-left,+{2}+3/3,~3'
+        --bind 'ctrl-o:become(nvim +{2} -- {1})' \
+        --bind 'ctrl-/:toggle-preview' \
+        --preview 'bat --color=always --style=numbers --highlight-line {2} -- {1}' \
+        --preview-window 'right,60%,border-left,+{2}+3/3,~3,<100(down,60%,border-top)' $options
 end
 
 function fdi --description 'Fuzzy file picker with fzf + bat preview'
     set -l initial_query (string join ' ' $argv)
 
-    rg --files --hidden --no-ignore-exclude --glob '!.git/**' | vi_fzf \
+    rg --files --hidden --no-ignore-exclude --glob '!.git/**' | __file_picker \
         --query "$initial_query" \
         --prompt 'files> ' \
-        --header 'Enter: print  Ctrl-O: open in nvim' \
-        --bind 'ctrl-o:become(nvim {})' \
-        --preview 'bat --color=always --style=numbers -- {}' \
-        --preview-window 'right,60%,border-left'
+        --header 'Enter: print · Ctrl-O: open in nvim · Ctrl-/: preview' \
+        --bind 'ctrl-o:become(nvim -- {})'
 end
 
 function __tmux_sessionizer
