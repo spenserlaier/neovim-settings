@@ -28,6 +28,10 @@
     fx
     gnumake
     jj-starship
+    (writeScriptBin "jjr" ''
+      #!${python3}/bin/python3
+      ${builtins.readFile ../scripts/jjr.py}
+    '')
     (writeScriptBin "jj-remote-prompt" ''
       #!${python3}/bin/python3
       ${builtins.readFile ../starship/jj-remote-prompt.py}

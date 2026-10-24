@@ -47,6 +47,30 @@ Ctrl-/ toggles previews, which move below the results in narrow terminals.
 for printing a result and Ctrl-O for opening it. Passing arguments to `nvim`
 continues to invoke the editor directly.
 
+`jjr` reviews the current Jujutsu change in a file picker with diff previews.
+Run `jjr -H` (or `jjr --hunks`) to start with individual hunks instead;
+`jjr -h` shows help. Both modes use the shared vi-style picker bindings.
+Ctrl-G switches between files and hunks, keeping the filter text and selecting
+the corresponding file or its first matching hunk when possible. The header
+shows the active mode. The picker retains normal/insert mode across switches
+and editor/diff visits. Enter opens the selected diff through Delta's full-screen
+pager; quit the pager to return. Ctrl-O opens the working file in Neovim at the
+selected change, then refreshes the list when Neovim exits. The picker retains
+the query and selection where possible. Ctrl-/ toggles the preview.
+
+Deleted files, binary files, and symlinks open their diff instead of launching
+Neovim. Files without textual hunks (including pure renames and mode changes)
+remain available in hunk mode as a `[no text hunks]` entry. Deleted hunks open at
+the nearest remaining line. Each refresh reviews one consistent snapshot of
+the current change, even if another process edits files during inspection;
+Ctrl-O always opens the live working file. Run from any workspace subdirectory.
+This command does not stage, restore, or otherwise rewrite changes. It depends
+on the managed Fish `vi_fzf` function, fzf, jj, Delta, and Neovim.
+
+Run `python3 scripts/test-jjr.py` to check hunk destinations, literal filenames,
+rename/deletion/binary handling, and filtered mode-switch selection using a
+temporary Jujutsu repository.
+
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
 Git repositories. The built-in Git modules are disabled so colocated Jujutsu
 workspaces show one version-control segment. The package is pinned by this
