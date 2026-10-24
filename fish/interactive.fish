@@ -24,15 +24,48 @@ function nvim
     if count $argv > /dev/null
         command nvim $argv
     else
-        set -l selected (__nvim_files | __file_picker \
-            --prompt 'open> ' --tiebreak=index --print-query --expect=ctrl-g \
-            --header 'Enter: open · Ctrl-G: search contents · Recent files first · Ctrl-/: preview')
+        set -l mode_file (mktemp -t nvim-picker.XXXXXXXXXX)
+        or return 1
+        set -lx VI_FZF_MODE_FILE "$mode_file"
+        printf insert > "$mode_file"
+        __nvim_picker
         set -l picker_status $status
+        command rm -f -- "$mode_file"
+        return $picker_status
+    end
+end
+
+function __nvim_picker --description 'Toggle filename and content search before opening Neovim'
+    set -l mode files
+    set -l query ''
+    while true
+        set -l selected
+        set -l picker_status
+        if test "$mode" = files
+            set selected (__nvim_files | __file_picker \
+                --query "$query" --prompt 'open> ' --tiebreak=index --print-query --expect=ctrl-g \
+                --header 'FILES · Enter: open · Ctrl-G: search contents · Recent files first · Ctrl-/: preview')
+            set picker_status $status
+        else
+            set selected (__rgi pick "$query")
+            set picker_status $status
+        end
         # fzf returns 1 when Ctrl-G is pressed with no filename matches.
         if test (count $selected) -ge 2; and test "$selected[2]" = ctrl-g
-            __rgi open "$selected[1]"
+            set query "$selected[1]"
+            if test "$mode" = files
+                set mode contents
+            else
+                set mode files
+            end
         else if test $picker_status -eq 0; and test (count $selected) -ge 3
-            command nvim -- "$selected[3]"
+            if test "$mode" = files
+                command nvim -- "$selected[3]"
+            else
+                set -l match (string split -m 2 ':' -- "$selected[3]")
+                command nvim +$match[2] -- "$match[1]"
+            end
+            return $status
         else
             return $picker_status
         end
@@ -91,6 +124,9 @@ function __rgi --description 'Content picker with caller-specific Enter action'
     if test "$mode" = open
         set header 'Enter: open · Ctrl-F: fuzzy-filter · Ctrl-/: preview'
         set options --bind 'enter:become(nvim +{2} -- {1})'
+    else if test "$mode" = pick
+        set header 'CONTENTS · Enter: open · Ctrl-G: search files · Ctrl-F: fuzzy-filter · Ctrl-/: preview'
+        set options --print-query --expect=ctrl-g
     end
 
     vi_fzf \

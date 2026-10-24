@@ -40,8 +40,9 @@ The wrapper is opt-in; plain `fzf` and Neovim Telescope keep their own bindings.
 Bare `nvim` opens a filename picker under the current directory with a file
 preview. Files from Neovim's saved recent-file history appear first, followed
 by the remaining files; the usual ignore rules still apply. Enter opens the
-selected file. Ctrl-G switches to content search using the current query, and
-Enter there opens the matching line. The picker headers show these shortcuts;
+selected file. Ctrl-G toggles between filename and content search, preserving
+the query and normal/insert mode; Enter in content search opens the matching
+line. The picker headers show these shortcuts;
 Ctrl-/ toggles previews, which move below the results in narrow terminals.
 `fdi` shares the filename preview, while standalone `fdi` and `rgi` keep Enter
 for printing a result and Ctrl-O for opening it. Passing arguments to `nvim`
