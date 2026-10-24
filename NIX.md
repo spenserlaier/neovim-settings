@@ -175,11 +175,23 @@ access the network. Files and tools
 live on the client; model context is sent to the desktop. No server settings
 are changed by this setup.
 
-The tunnel is shared between launches using a control socket under
-`~/.cache/opencode` (or `$XDG_CACHE_HOME/opencode`). To close it explicitly,
-run `opencode-local --stop-tunnel`. Plain `opencode` uses the same configuration
-but expects the tunnel to be running already. OpenCode updates are managed by
-the pinned Nix package rather than its self-updater.
+The tunnel is shared between launches and supervised by `autossh`. SSH
+keepalives detect an unresponsive connection after roughly 90 seconds while
+the client is awake; autossh then reconnects, retrying with backoff while the
+desktop or network is unavailable. After sleep or a network change, future
+requests can recover once the tunnel returns; an interrupted generation may
+still need to be retried. Reconnection requires the SSH key to remain usable
+(including an unlocked SSH agent for an encrypted key).
+
+The supervisor PID, SSH control socket, lock, and `ollama-autossh.log` live under
+`~/.cache/opencode` (or `$XDG_CACHE_HOME/opencode`). The supervisor continues
+running after OpenCode exits, including if the launch health check fails.
+Run `opencode-local --stop-tunnel` to stop both the supervisor and tunnel;
+this affects all sessions sharing it. The first launch with autossh replaces
+any tunnel left by the older launcher. Stop the tunnel before changing the SSH
+host or identity environment variables. Plain `opencode` uses the same
+configuration but expects the tunnel to be running already. OpenCode updates
+are managed by the pinned Nix package rather than its self-updater.
 
 ## Install
 
