@@ -21,3 +21,12 @@ program.
 
 Racket does not format automatically on save. Explicit formatting remains
 available with `<leader>f` when the server supports it.
+
+In normal and visual mode, placing the cursor on either `(` / `)` or `[` / `]`
+adds a faint background tint across the matched expression. Moving off the
+delimiter clears the tint; the existing matching-pair highlights remain.
+This uses `vim-matchup`, works across lines, and does not require a Racket
+Tree-sitter parser. The tint adapts when changing color schemes, blending 75%
+background with 25% of the theme's informational accent to distinguish it from
+the current-line highlight. Its strength can be adjusted in
+`lua/custom/delimiter_tint.lua`.

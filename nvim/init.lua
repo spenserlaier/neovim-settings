@@ -218,6 +218,9 @@ require('lazy').setup({
       vim.g.matchup_matchparen_deferred = 1
       vim.g.matchup_matchparen_offscreen = { method = 'popup' }
     end,
+    config = function()
+      require('custom.delimiter_tint').setup()
+    end,
   },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
