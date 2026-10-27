@@ -19,8 +19,11 @@ messages, and `<leader>q` diagnostic list. Use `:checkhealth vim.lsp` to inspect
 the attached server. Runtime errors and failing tests still require running the
 program.
 
-Racket does not format automatically on save. Explicit formatting remains
-available with `<leader>f` when the server supports it.
+Racket formats automatically on save through the attached language server,
+using the existing two-second formatting timeout. Explicit formatting is also
+available with `<leader>f`. If the server is absent, saving works without
+formatting. The installed server's indenter adjusts whitespace; it does not
+balance missing parentheses or perform full line-break reflow.
 
 In normal and visual mode, placing the cursor on either `(` / `)` or `[` / `]`
 adds a faint background tint across the matched expression. Moving off the
