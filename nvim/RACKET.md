@@ -3,6 +3,10 @@
 Racket support uses an existing `racket` executable on Neovim's PATH. Home
 Manager does not install Racket or its packages.
 
+Home Manager supplies the Racket Tree-sitter parser and its standard syntax
+highlighting queries. Rebuild the Home Manager configuration and restart
+Neovim to use them. No PLAI-specific highlighting rules are added.
+
 For `#lang plai-typed`, install the packages using the same Racket installation
 that Neovim will launch:
 
