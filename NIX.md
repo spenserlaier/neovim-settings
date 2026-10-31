@@ -19,6 +19,11 @@ Readline module generates `~/.inputrc`, and Home Manager also generates
 which of those libraries they use. Press Escape to enter command mode and `i`
 to return to insert mode.
 
+Linux installs `xclip` for X11 clipboard access and `wl-clipboard` (`wl-copy`
+and `wl-paste`) for Wayland. Neovim automatically selects an available clipboard
+provider for the session. These tools do not require OpenGL driver integration.
+On macOS, Neovim uses the system's `pbcopy` and `pbpaste` instead.
+
 `PYTHON_BASIC_REPL=1` selects Python's traditional REPL so it uses these input
 settings, trading PyREPL's newer multiline editing interface for vi bindings.
 After activation, start a fresh login session to pick up the environment change.
@@ -134,7 +139,11 @@ Ranger is installed by Nix, and Home Manager links the repository's existing
 Ranger configuration into `~/.config/ranger`.
 
 Home Manager links the repository's Kitty configuration into `~/.config/kitty`.
-Kitty itself remains part of the optional macOS Homebrew layer. Home Manager
+On Linux, install Kitty through the host package manager (`sudo dnf install kitty`
+on Fedora) so it uses the host graphics stack. Thunderbird is installed by Home
+Manager on Linux. Kitty and Thunderbird use the optional Homebrew layer on macOS. Codex CLI is installed by Home Manager on both platforms;
+its version follows the pinned Nixpkgs input. Run `codex` to sign in after
+activation. Home Manager
 installs CaskaydiaCove Nerd Font, FiraCode Nerd Font, and Noto Sans Symbols 2
 through `home/fonts.nix`. On macOS its native font module copies them into
 `~/Library/Fonts/HomeManager`; on Linux the Fontconfig module exposes them.
@@ -274,12 +283,43 @@ installer. It then activates the matching flake target with Home Manager. The
 first run uses Home Manager's `nix run` bootstrap; subsequent runs use the
 `home-manager` command installed by this configuration.
 
-Kitty is installed on macOS through Homebrew; fonts are installed by Home
-Manager. On a machine with Homebrew installed, install Kitty with:
+Kitty and Thunderbird are installed on macOS through Homebrew; fonts and Codex
+CLI are installed by Home Manager. On a machine with Homebrew installed, run:
 
 ```sh
 brew bundle --file Brewfile
 ```
+
+### Neovim runtime state
+
+Home Manager links `~/.config/nvim` into the read-only Nix store. Lazy.nvim
+therefore stores its writable lockfile at Neovim's data directory
+(`~/.local/share/nvim/lazy-lock.json` by default), seeded from the repository's
+`nvim/lazy-lock.json` on first launch. Plugin installs and updates can write
+there without changing the managed configuration. To persist intentional
+plugin version changes in the setup, copy that runtime lockfile back to the
+repository before rebuilding. Later activations preserve the runtime lockfile.
+
+### Desktop keyboard configuration
+
+Desktop keyboard settings are not currently activated by this configuration.
+They can be declared per desktop while sharing the intended bindings:
+
+| Desktop | Caps Lock to Escape | Ctrl+Alt+T launches Kitty |
+| --- | --- | --- |
+| KDE Plasma (including this Fedora host) | Plasma Manager `programs.plasma.input.keyboard.options = [ "caps:escape" ];` | Plasma Manager `programs.plasma.hotkeys.commands` with `keys = [ "Ctrl+Alt+T" ];` and a Kitty executable path |
+| GNOME | Home Manager `dconf.settings`, `org/gnome/desktop/input-sources` `xkb-options = [ "caps:escape" ];` | GNOME custom keybinding via `dconf.settings` |
+| macOS | Native modifier-key setting, or a separate managed remapping tool | A separate launcher/shortcut tool with a managed configuration |
+
+Plasma Manager would need to be added as a pinned flake input and imported into
+a KDE-specific Home Manager target. GNOME settings should live in a separate
+target as well; Linux alone does not identify the desktop. Avoid relying on
+`setxkbmap` for Wayland sessions. When configuring Ctrl+Alt+T, replace any existing
+terminal binding to avoid a conflict. Prefer an absolute Nix package executable
+path for launch commands because the desktop may not inherit the shell's PATH.
+
+References: [Plasma Manager options](https://nix-community.github.io/plasma-manager/options.html),
+[Home Manager dconf settings](https://nix-community.github.io/home-manager/options/home-manager/dconf.html).
 
 ## Verify
 

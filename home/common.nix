@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
   imports = [ ./fonts.nix ./opencode.nix ];
@@ -21,6 +21,7 @@
     carapace
     clang
     clang-tools
+    codex
     delta
     eza
     fd
@@ -46,6 +47,10 @@
     unzip
     yazi
     zoxide
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    pkgs.thunderbird
+    pkgs.wl-clipboard
+    pkgs.xclip
   ];
 
   programs = {

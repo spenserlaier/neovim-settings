@@ -184,6 +184,13 @@ local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
 -- [[ Configure and install plugins ]]
+-- Home Manager keeps the config in the read-only Nix store. Seed a writable
+-- lockfile once so first-run installs and later updates can record versions.
+local lazy_lockfile = vim.fn.stdpath 'data' .. '/lazy-lock.json'
+if not vim.uv.fs_stat(lazy_lockfile) then
+  vim.fn.mkdir(vim.fn.stdpath 'data', 'p')
+  vim.fn.writefile(vim.fn.readfile(vim.fn.stdpath 'config' .. '/lazy-lock.json'), lazy_lockfile)
+end
 --
 --  To check the current status of your plugins, run
 --    :Lazy
@@ -1130,6 +1137,7 @@ require('lazy').setup({
     end,
   },
 }, {
+  lockfile = lazy_lockfile,
   -- Preserve native packages supplied through Home Manager's pack/hm/start.
   performance = {
     reset_packpath = false,
