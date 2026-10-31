@@ -10,6 +10,9 @@ case "$(uname -s)-$(uname -m)" in
     ;;
   Linux-x86_64)
     home_target='spenser@linux'
+    if [[ ":${XDG_CURRENT_DESKTOP:-}:" == *:KDE:* ]]; then
+      home_target='spenser@linux-kde'
+    fi
     nix_install_args=(--daemon)
     ;;
   *)
@@ -19,7 +22,7 @@ case "$(uname -s)-$(uname -m)" in
 esac
 
 is_bazzite=false
-if [[ "$home_target" == 'spenser@linux' && -r /etc/os-release ]]; then
+if [[ "$home_target" == spenser@linux* && -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   source /etc/os-release
   if [[ "${ID:-}" == bazzite || "${VARIANT_ID:-}" == bazzite ]]; then

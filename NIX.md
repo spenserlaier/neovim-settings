@@ -302,21 +302,28 @@ repository before rebuilding. Later activations preserve the runtime lockfile.
 
 ### Desktop keyboard configuration
 
-Desktop keyboard settings are not currently activated by this configuration.
-They can be declared per desktop while sharing the intended bindings:
+The `spenser@linux-kde` target imports pinned Plasma Manager and `home/kde.nix`.
+It maps Caps Lock to Escape and Ctrl+Alt+T to `/usr/bin/kitty`, disabling the
+Konsole launcher shortcut. Install Kitty through the host package manager first.
+Only these declared settings are managed; the rest of the desktop settings are
+preserved. Keyboard options are set to `caps:escape`, replacing other XKB options.
+
+`./install.sh` and `./verify.sh` select this target when `XDG_CURRENT_DESKTOP`
+contains `KDE`. In SSH or other sessions without that variable, select it explicitly:
+
+```sh
+home-manager switch --flake 'path:.#spenser@linux-kde'
+```
+
+Log out and back in if Plasma has not picked up the updated keyboard settings.
+The generic `spenser@linux` and macOS targets do not manage desktop shortcuts.
+Other desktops would need their own modules:
 
 | Desktop | Caps Lock to Escape | Ctrl+Alt+T launches Kitty |
 | --- | --- | --- |
 | KDE Plasma (including this Fedora host) | Plasma Manager `programs.plasma.input.keyboard.options = [ "caps:escape" ];` | Plasma Manager `programs.plasma.hotkeys.commands` with `keys = [ "Ctrl+Alt+T" ];` and a Kitty executable path |
 | GNOME | Home Manager `dconf.settings`, `org/gnome/desktop/input-sources` `xkb-options = [ "caps:escape" ];` | GNOME custom keybinding via `dconf.settings` |
 | macOS | Native modifier-key setting, or a separate managed remapping tool | A separate launcher/shortcut tool with a managed configuration |
-
-Plasma Manager would need to be added as a pinned flake input and imported into
-a KDE-specific Home Manager target. GNOME settings should live in a separate
-target as well; Linux alone does not identify the desktop. Avoid relying on
-`setxkbmap` for Wayland sessions. When configuring Ctrl+Alt+T, replace any existing
-terminal binding to avoid a conflict. Prefer an absolute Nix package executable
-path for launch commands because the desktop may not inherit the shell's PATH.
 
 References: [Plasma Manager options](https://nix-community.github.io/plasma-manager/options.html),
 [Home Manager dconf settings](https://nix-community.github.io/home-manager/options/home-manager/dconf.html).
@@ -330,7 +337,7 @@ Home Manager or Neovim configuration:
 ./verify.sh
 ```
 
-It evaluates both supported Home Manager targets, builds the current host
+It evaluates all three Home Manager targets, builds the current host
 without creating a `result` symlink, validates the Lazy lock file, and checks
 the Nix-wrapped Neovim tools and parsers against the built Home Manager XDG data
 tree without activating it or loading Lazy's runtime state.

@@ -7,6 +7,7 @@ cd "$repo_root"
 echo "Evaluating Home Manager targets..."
 nix eval --raw 'path:.#homeConfigurations."spenser@macos".activationPackage.drvPath' >/dev/null
 nix eval --raw 'path:.#homeConfigurations."spenser@linux".activationPackage.drvPath' >/dev/null
+nix eval --raw 'path:.#homeConfigurations."spenser@linux-kde".activationPackage.drvPath' >/dev/null
 
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64)
@@ -14,6 +15,9 @@ case "$(uname -s)-$(uname -m)" in
     ;;
   Linux-x86_64)
     home_target='spenser@linux'
+    if [[ ":${XDG_CURRENT_DESKTOP:-}:" == *:KDE:* ]]; then
+      home_target='spenser@linux-kde'
+    fi
     ;;
   *)
     echo "Unsupported verification host: $(uname -s)-$(uname -m)" >&2
