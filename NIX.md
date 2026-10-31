@@ -13,6 +13,15 @@ Fish is managed through its native module. Shared interactive behavior lives in
 `fish/interactive.fish`; Home Manager embeds that file in its generated Fish
 configuration and generates the Atuin and Starship integrations.
 
+Neovim is the default terminal editor through Home Manager's `defaultEditor`
+setting (`EDITOR`), plus session-wide `VISUAL` and `SYSTEMD_EDITOR` variables.
+Log out and back in after activation so applications inherit these settings.
+Interactive Fish also sets `EDITOR` and `VISUAL` directly.
+`sudo` may discard editor variables and exclude Nix programs from its PATH;
+for privileged systemd edits, use `sudo env SYSTEMD_EDITOR="$(command -v nvim)" systemctl edit ollama`
+from Bash, or `sudo env SYSTEMD_EDITOR=(command -s nvim) systemctl edit ollama`
+from Fish. These commands give systemd the absolute editor path explicitly.
+
 CLI input uses basic vi bindings: Fish configures its own editor, the native
 Readline module generates `~/.inputrc`, and Home Manager also generates
 `~/.editrc` for libedit clients. This covers tools such as `psql` regardless of

@@ -9,6 +9,12 @@
   # Use Readline/libedit editing in Python instead of the newer PyREPL.
   home.sessionVariables.PYTHON_BASIC_REPL = "1";
 
+  # EDITOR is supplied by programs.neovim.defaultEditor below.
+  home.sessionVariables = {
+    VISUAL = "nvim";
+    SYSTEMD_EDITOR = "nvim";
+  };
+
   # libedit uses a separate configuration from GNU Readline (notably on macOS).
   home.file.".editrc".text = ''
     bind -v
