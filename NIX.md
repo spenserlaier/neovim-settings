@@ -113,7 +113,10 @@ shells instead.
 
 Tmux is managed through its native module. `tmux/common.conf` contains the shared
 configuration, while Home Manager supplies pinned Resurrect and Continuum
-plugins.
+plugins. New tmux windows and panes explicitly use the managed Fish shell,
+regardless of the account's login shell. After changing this setting, reload
+the configuration in an existing server with `tmux source-file ~/.config/tmux/tmux.conf`.
+Existing panes keep their running shell; run `exec fish` in a Bash pane to switch it.
 
 With the `Ctrl-a` prefix, `f` searches existing tmux sessions, including detached
 sessions, showing their directories, window counts, and attachment status.
@@ -287,8 +290,11 @@ when an older desktop session still carries Mise paths.
 
 ### Apple Silicon macOS and other x86-64 Linux
 
-Run `./install.sh`. When necessary, the script installs Nix using the official
-installer. It then activates the matching flake target with Home Manager. The
+Run `./install.sh`. The script first loads an existing multi-user Nix installation
+if it is missing from the current shell's PATH. When Nix needs installing, it
+uses the Determinate installer on SELinux-enabled Linux (including permissive
+mode), which installs the Nix SELinux policy. Other supported hosts use the
+official Nix installer. It then activates the matching flake target with Home Manager. The
 first run uses Home Manager's `nix run` bootstrap; subsequent runs use the
 `home-manager` command installed by this configuration.
 

@@ -171,6 +171,7 @@
 
     tmux = {
       enable = true;
+      shell = "${pkgs.fish}/bin/fish";
       extraConfig = builtins.readFile ../tmux/common.conf;
       plugins = with pkgs.tmuxPlugins; [
         resurrect

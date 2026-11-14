@@ -30,13 +30,14 @@ if [[ "$home_target" == spenser@linux* && -r /etc/os-release ]]; then
   fi
 fi
 
-if [[ "$is_bazzite" == true ]]; then
-  nix_profile='/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-  if ! command -v nix >/dev/null 2>&1 && [[ -r "$nix_profile" ]]; then
-    # shellcheck disable=SC1090
-    source "$nix_profile"
-  fi
+# An existing installation may not be on PATH until a new login shell starts.
+nix_profile='/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+if ! command -v nix >/dev/null 2>&1 && [[ -r "$nix_profile" ]]; then
+  # shellcheck disable=SC1090
+  source "$nix_profile"
+fi
 
+if [[ "$is_bazzite" == true ]]; then
   if ! command -v nix >/dev/null 2>&1; then
     echo 'Bazzite requires the Determinate ostree Nix installation before Home Manager activation.' >&2
     echo 'Follow the Bazzite instructions in NIX.md; the ordinary multi-user installer is not suitable here.' >&2
@@ -61,11 +62,28 @@ if [[ "$is_bazzite" == true ]]; then
 fi
 
 if ! command -v nix >/dev/null 2>&1; then
-  echo 'Installing Nix using the official multi-user installer...'
-  curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install |
-    sh -s -- "${nix_install_args[@]}"
+  selinux_enabled=false
+  if [[ "$home_target" == spenser@linux* ]]; then
+    if command -v selinuxenabled >/dev/null 2>&1; then
+      if selinuxenabled; then
+        selinux_enabled=true
+      fi
+    elif [[ -e /sys/fs/selinux/enforce ]]; then
+      # This file exists in both enforcing and permissive mode.
+      selinux_enabled=true
+    fi
+  fi
 
-  nix_profile='/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+  if [[ "$selinux_enabled" == true ]]; then
+    echo 'Installing Nix using the SELinux-compatible Determinate installer...'
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix |
+      sh -s -- install
+  else
+    echo 'Installing Nix using the official multi-user installer...'
+    curl --proto '=https' --tlsv1.2 -sSf -L https://nixos.org/nix/install |
+      sh -s -- "${nix_install_args[@]}"
+  fi
+
   if [[ -r "$nix_profile" ]]; then
     # shellcheck disable=SC1090
     source "$nix_profile"
