@@ -732,7 +732,7 @@ require('lazy').setup({
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
+          require('conform').format { async = true, lsp_format = vim.bo.filetype == 'racket' and 'first' or 'fallback' }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -750,7 +750,7 @@ require('lazy').setup({
         else
           return {
             timeout_ms = 2000, -- increased timeout to account for slower 'darker' formatting
-            lsp_format = 'fallback',
+            lsp_format = vim.bo[bufnr].filetype == 'racket' and 'first' or 'fallback',
           }
         end
       end,
@@ -758,6 +758,7 @@ require('lazy').setup({
         lua = { 'stylua' },
         c = { 'clang_format' },
         python = { 'darker' },
+        racket = { 'racket_compact', lsp_format = 'first' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -765,6 +766,11 @@ require('lazy').setup({
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
       formatters = {
+        racket_compact = {
+          format = function(...)
+            require('custom.racket_format').format(...)
+          end,
+        },
         -- NOTE: Make sure that clang-format is installed locally and readily
         -- available in $PATH, or else formatting might default to something else
         clang_format = {

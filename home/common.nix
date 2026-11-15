@@ -20,6 +20,13 @@
     bind -v
   '';
 
+  # The Racket language server's fixw indenter reads rules from ancestor
+  # .lispwords files. PLAI forms need body indentation rather than call alignment.
+  home.file.".lispwords".text = ''
+    (type-case 2)
+    (define-type 1)
+  '';
+
   # General-purpose command-line tools available outside program-specific
   # wrappers as well as inside editors and shells.
   home.packages = with pkgs; [

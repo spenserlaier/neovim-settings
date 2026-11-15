@@ -24,10 +24,20 @@ the attached server. Runtime errors and failing tests still require running the
 program.
 
 Racket formats automatically on save through the attached language server,
-using the existing two-second formatting timeout. Explicit formatting is also
-available with `<leader>f`. If the server is absent, saving works without
-formatting. The installed server's indenter adjusts whitespace; it does not
-balance missing parentheses or perform full line-break reflow.
+followed by a Tree-sitter pass that indents PLAI variant-clause bodies two
+spaces from the clause opener. This avoids argument-style alignment inside
+patterns such as `(res (value store) ...)`, while ordinary constructor calls
+keep their usual alignment. Both steps also run with `<leader>f`, using the
+existing two-second timeout on save. The compacting pass preserves line breaks
+and literal contents, and skips files with parse errors. If the server is
+absent, only the compacting pass runs. Formatting does not balance missing
+parentheses or enforce a maximum line width.
+
+Home Manager installs `~/.lispwords` rules for PLAI's `type-case` and
+`define-type`. In particular, `type-case` clauses indent two spaces from the
+opening form instead of aligning under its first argument, which otherwise
+pushes nested cases far to the right. The indenter reads these rules for files
+under your home directory; a project's own `.lispwords` can override them.
 
 In normal and visual mode, placing the cursor on either `(` / `)` or `[` / `]`
 adds a faint background tint across the matched expression. Moving off the

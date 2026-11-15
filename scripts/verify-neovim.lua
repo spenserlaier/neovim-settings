@@ -32,6 +32,8 @@ for _, parser in ipairs(parsers) do
   assert(pcall(vim.treesitter.language.add, parser), 'parser failed to load: ' .. parser)
 end
 
+dofile 'scripts/test-racket-format.lua'
+
 local executables = {
   'bash-language-server',
   'clangd',
