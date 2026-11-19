@@ -202,6 +202,10 @@
       source = ../fish/tmux-window-colors.fish;
       executable = true;
     };
+    "fish/tmux-window-hints.fish" = {
+      source = ../fish/tmux-window-hints.fish;
+      executable = true;
+    };
     "kitty/kitty.conf" = {
       text = builtins.replaceStrings
         [ "font_size 24" ]

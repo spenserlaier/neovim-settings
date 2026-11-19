@@ -128,6 +128,11 @@ Numeric session names are displayed with their starting directory's basename
 the directory. Plain `tmux`/`new-session` creation can still assign numeric names.
 `g` opens the current session's window picker with command and directory labels,
 and `r` reloads the tmux configuration.
+`Space` opens a home-row letter menu for the current session's first sixteen
+windows; press the shown letter to jump directly, or `o` for the full picker
+when more windows exist. `n` and `p` repeat after one prefix press, and `l`
+returns to the last window. The menu uses the same window colors as the status
+line and picker.
 Each window receives a stable accent from its tmux window ID. The accent appears
 in the regular window list, in the picker, and on the active pane border when
 the window is split. Colors repeat after eight windows.

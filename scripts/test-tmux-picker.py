@@ -1,11 +1,17 @@
 """Integration checks using an isolated tmux server; requires tmux, fish, fzf."""
 
 import json
+import fcntl
 import os
 from pathlib import Path
+import pty
+import select
 import shutil
+import signal
+import struct
 import subprocess
 import tempfile
+import termios
 import time
 
 
@@ -24,9 +30,13 @@ def check():
         config_dir.mkdir(parents=True)
         (config_dir / "tmux-window-colors.fish").symlink_to(
             ROOT / "fish/tmux-window-colors.fish")
+        (config_dir / "tmux-window-hints.fish").symlink_to(
+            ROOT / "fish/tmux-window-hints.fish")
+        real_menu = directory / "real-menu"
         env = dict(os.environ, HOME=str(directory),
                    PATH=f"{directory}:{os.environ['PATH']}",
                    PICKER_LOG=str(log), PICKER_ROWS=str(rows), PICKER_QUERY="",
+                   PICKER_REAL_MENU_FILE=str(real_menu),
                    PICKER_ACTION_FILE=str(directory / 'action'), FZF_DEFAULT_OPTS="")
         env.pop("TMUX", None)
         env.pop("TMUX_PANE", None)
@@ -39,9 +49,11 @@ def check():
         (directory / "tmux").write_text(f'''#!/usr/bin/env python3
 import json, os, subprocess, sys
 args = sys.argv[1:]
-if args[0] in ('attach-session', 'switch-client', 'select-window'):
+if args[0] in ('attach-session', 'switch-client', 'select-window', 'display-menu'):
     with open(os.environ['PICKER_LOG'], 'a') as f:
         f.write(json.dumps(args) + '\\n')
+    if args[0] == 'display-menu' and os.path.exists(os.environ['PICKER_REAL_MENU_FILE']):
+        sys.exit(subprocess.call([{TMUX!r}, '-S', {socket!r}, *args]))
 else:
     sys.exit(subprocess.call([{TMUX!r}, '-S', {socket!r}, *args]))
 ''')
@@ -128,6 +140,11 @@ if result.stdout:
             bindings = tmux("list-keys", "-T", "prefix")
             assert "--windows" in bindings, bindings
             assert "--sessions" in bindings, bindings
+            assert "tmux-window-hints.fish" in bindings, bindings
+            assert any("-r -T prefix n" in line and "next-window" in line
+                       for line in bindings.splitlines()), bindings
+            assert any("-r -T prefix p" in line and "previous-window" in line
+                       for line in bindings.splitlines()), bindings
             accents = tmux("list-windows", "-t", sid,
                            "-F", "#{@window_accent}").splitlines()
             assert len(accents) == 2 and len(set(accents)) == 2, accents
@@ -143,6 +160,79 @@ if result.stdout:
                          "#{window_id}", "-n", "third", "sleep 120")
             assert tmux("display-message", "-p", "-t", third,
                         "#{@window_accent}").startswith("#")
+            subprocess.run(["fish", "--no-config", str(ROOT / "fish/tmux-window-hints.fish"),
+                            sid], env=env, check=True)
+            menu = json.loads(log.read_text().splitlines()[-1])
+            assert menu[:6] == ["display-menu", "-T", "Jump to window", "-x", "C", "-y"], menu
+            assert "a" in menu and "s" in menu and "d" in menu, menu
+            assert f"select-window -t {wid}" in menu, menu
+            assert any("●" in item and "#[fg=#" in item for item in menu), menu
+
+            # An attached client must actually show the menu and jump on one key.
+            second = tmux("display-message", "-p", "-t", f"{sid}:1", "#{window_id}")
+            real_menu.touch()
+            pid, terminal = pty.fork()
+            if pid == 0:
+                os.execve(TMUX, [TMUX, "-S", socket, "attach-session", "-t", sid], env)
+            try:
+                fcntl.ioctl(terminal, termios.TIOCSWINSZ,
+                            struct.pack("HHHH", 30, 120, 0, 0))
+                for _ in range(50):
+                    if tmux("list-clients", "-F", "#{session_id}") == sid:
+                        break
+                    time.sleep(0.02)
+                if select.select([terminal], [], [], 1)[0]:
+                    os.read(terminal, 65536)
+                client_tty = tmux("list-clients", "-F", "#{client_tty}")
+                menu_process = subprocess.Popen(
+                    ["fish", "--no-config", str(ROOT / "fish/tmux-window-hints.fish"),
+                     sid, client_tty], env=env, stderr=subprocess.PIPE)
+                output = b""
+                deadline = time.monotonic() + 3
+                while b"Jump to window" not in output and time.monotonic() < deadline:
+                    if select.select([terminal], [], [], 0.1)[0]:
+                        output += os.read(terminal, 65536)
+                assert b"Jump to window" in output, (
+                    output[-500:], log.read_text().splitlines()[-1],
+                    tmux("list-clients", "-F", "#{client_key_table}"),
+                    tmux("show-messages"))
+                os.write(terminal, b"s")
+                assert menu_process.wait(timeout=3) == 0, menu_process.stderr.read()
+                for _ in range(50):
+                    if tmux("display-message", "-p", "-t", sid,
+                            "#{window_id}") == second:
+                        break
+                    time.sleep(0.02)
+                assert tmux("display-message", "-p", "-t", sid,
+                            "#{window_id}") == second
+                if select.select([terminal], [], [], 0.1)[0]:
+                    os.read(terminal, 65536)
+                os.write(terminal, b"\x01")
+                time.sleep(0.05)
+                assert tmux("list-clients", "-F", "#{client_key_table}") == "prefix"
+                os.write(terminal, b" ")
+                output = b""
+                deadline = time.monotonic() + 3
+                while b"Jump to window" not in output and time.monotonic() < deadline:
+                    if select.select([terminal], [], [], 0.1)[0]:
+                        output += os.read(terminal, 65536)
+                assert b"Jump to window" in output, (
+                    output[-500:], log.read_text().splitlines()[-1],
+                    tmux("list-clients", "-F", "#{client_key_table}"),
+                    tmux("show-messages"))
+                os.write(terminal, b"a")
+                for _ in range(50):
+                    if tmux("display-message", "-p", "-t", sid,
+                            "#{window_id}") == wid:
+                        break
+                    time.sleep(0.02)
+                assert tmux("display-message", "-p", "-t", sid,
+                            "#{window_id}") == wid
+            finally:
+                os.kill(pid, signal.SIGTERM)
+                os.waitpid(pid, 0)
+                os.close(terminal)
+                real_menu.unlink()
 
             # Confirmation rejects no, Escape, uppercase Y, Enter, and EOF.
             before = log.read_text()
