@@ -20,7 +20,12 @@ def check():
         socket = str(directory / "socket")
         log = directory / "calls.jsonl"
         rows = directory / "rows"
-        env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}",
+        config_dir = directory / ".config" / "fish"
+        config_dir.mkdir(parents=True)
+        (config_dir / "tmux-window-colors.fish").symlink_to(
+            ROOT / "fish/tmux-window-colors.fish")
+        env = dict(os.environ, HOME=str(directory),
+                   PATH=f"{directory}:{os.environ['PATH']}",
                    PICKER_LOG=str(log), PICKER_ROWS=str(rows), PICKER_QUERY="",
                    PICKER_ACTION_FILE=str(directory / 'action'), FZF_DEFAULT_OPTS="")
         env.pop("TMUX", None)
@@ -123,6 +128,21 @@ if result.stdout:
             bindings = tmux("list-keys", "-T", "prefix")
             assert "--windows" in bindings, bindings
             assert "--sessions" in bindings, bindings
+            accents = tmux("list-windows", "-t", sid,
+                           "-F", "#{@window_accent}").splitlines()
+            assert len(accents) == 2 and len(set(accents)) == 2, accents
+            assert all(accent.startswith("#") for accent in accents), accents
+            assert tmux("show-options", "-w", "-v", "-t", wid,
+                        "pane-active-border-style") == f"fg={accents[0]}"
+            assert "@window_accent" in tmux("show-options", "-gw", "-v",
+                                             "window-status-format")
+            env["PICKER_QUERY"] = "second"
+            picker("--windows")
+            assert "\x1b[" in rows.read_text() and "●" in rows.read_text()
+            third = tmux("new-window", "-d", "-t", sid, "-P", "-F",
+                         "#{window_id}", "-n", "third", "sleep 120")
+            assert tmux("display-message", "-p", "-t", third,
+                        "#{@window_accent}").startswith("#")
 
             # Confirmation rejects no, Escape, uppercase Y, Enter, and EOF.
             before = log.read_text()

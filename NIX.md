@@ -128,6 +128,9 @@ Numeric session names are displayed with their starting directory's basename
 the directory. Plain `tmux`/`new-session` creation can still assign numeric names.
 `g` opens the current session's window picker with command and directory labels,
 and `r` reloads the tmux configuration.
+Each window receives a stable accent from its tmux window ID. The accent appears
+in the regular window list, in the picker, and on the active pane border when
+the window is split. Colors repeat after eight windows.
 
 Outside tmux, Fish also accepts `Ctrl-a`, `f` to attach to an existing session,
 and `Ctrl-a`, `Shift-f` to choose a project directory before creating or

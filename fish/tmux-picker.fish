@@ -10,6 +10,12 @@ if contains -- "$mode" --preview-session --preview-window
         set target "$target:"
         printf '\n'
     end
+    set accent (tmux display-message -p -t "$target" '#{@window_accent}' 2>/dev/null)
+    if test -n "$accent"
+        set_color "$accent"
+        printf '● '
+        set_color normal
+    end
     tmux display-message -p -t "$target" '#{session_name} > #{window_index}: #{window_name} | #{pane_current_command}
 #{pane_current_path}' 2>/dev/null
     printf '\n'
@@ -35,7 +41,15 @@ else if test "$mode" = --windows
     # Resolve the session now, so previewing cannot change the search scope.
     set session_id (tmux display-message -p '#{session_id}')
     or exit 1
-    set rows (tmux list-windows -t "$session_id" -F "#{window_id}$tab#{window_index}: #{window_name} | #{pane_current_command} | #{pane_current_path}#{?window_active, [current],}")
+    set rows
+    for window in (tmux list-windows -t "$session_id" -F "#{window_id}$tab#{@window_accent}$tab#{window_index}: #{window_name} | #{pane_current_command} | #{pane_current_path}#{?window_active, [current],}")
+        set fields (string split -m 2 "$tab" -- "$window")
+        set marker ''
+        if test -n "$fields[2]"
+            set marker (set_color "$fields[2]")'●'(set_color normal)' '
+        end
+        set -a rows "$fields[1]$tab$marker$fields[3]"
+    end
 else
     printf 'Usage: tmux-picker.fish --sessions|--windows\n' >&2
     exit 1
@@ -50,7 +64,7 @@ while true
         exit 0
     end
     set selected (printf '%s\n' $rows | vi_fzf --reverse \
-        --delimiter '\t' --with-nth=2.. --prompt="$prompt" --header="$header" \
+        --ansi --delimiter '\t' --with-nth=2.. --prompt="$prompt" --header="$header" \
         --preview="$preview_command" --preview-window='right,65%,border-left,<100(down,65%,border-top)' \
         --bind='ctrl-/:toggle-preview' --query="$query" $picker_options)
     if test "$mode" = --windows
