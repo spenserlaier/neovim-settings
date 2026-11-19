@@ -203,7 +203,7 @@ symbol = " "
 when = "jj-starship detect"
 command = '''
 width=${COLUMNS:-$(tput cols 2>/dev/null || printf 80)}
-jj-starship | awk -v width="$width" '
+jj-starship --bookmarks-display-limit 1 | awk -v width="$width" '
   function visible_length(text) {
     gsub(/\033\[[0-9;]*m/, "", text)
     return length(text)

@@ -92,19 +92,21 @@ workspaces show one version-control segment. The package is pinned by this
 repository's nixpkgs lock file; no separate flake input is needed.
 
 `jj hist` shows the current change's ancestors and descendants without the
-default log's revision filtering. The Starship local bookmark row keeps its
-existing comma-based wrapping. A separate peach (`#fab387`) `↗ remote` row shows remote
-bookmarks within ten ancestor edges of the working copy, plus remote
-counterparts of local bookmarks in that range. It excludes synthetic `@git`
-refs, includes remote-only bookmarks, and reflects the last fetched state.
-The ancestor range follows `JJ_STARSHIP_ANCESTOR_BOOKMARK_DEPTH` when set.
+default log's revision filtering. The Starship local bookmark row shows the
+nearest bookmark and keeps its existing comma-based wrapping. A separate peach
+(`#fab387`) `↗ remote` row shows up to three nearest remote bookmarks within ten
+ancestor edges of the working copy, plus remote counterparts of local bookmarks
+in that range. It excludes synthetic `@git` refs, includes remote-only bookmarks,
+and reflects the last fetched state. The ancestor range follows
+`JJ_STARSHIP_ANCESTOR_BOOKMARK_DEPTH` when set. The remote limit follows
+`JJ_STARSHIP_REMOTE_BOOKMARK_LIMIT` when set.
 
 Remote suffixes compare against the working copy: `~N` means N commits behind,
 `↑N` means N commits ahead, and `↔↑N↓M` means diverged (N remote-only commits,
 M working-copy-only commits). An exact match has no suffix; `!` marks a
 conflicted remote bookmark. Unlike the local row's shortest ancestor distance,
 remote counts include all commits on each side of a merge. The remote row wraps
-between complete entries without shortening names or limiting their count.
+between complete entries without shortening names.
 Names wider than the terminal naturally wrap within the terminal itself.
 
 Direnv and nix-direnv are managed natively and integrated with Fish. Pyenv and

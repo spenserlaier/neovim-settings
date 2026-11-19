@@ -33,8 +33,9 @@ def ancestor_distances(graph, depth):
 
 
 def select_remotes(refs, distances):
-    local_names = {
-        ref["name"]
+    local_distances = {
+        ref["name"]: min(distances[target] for target in ref["targets"]
+                         if target in distances)
         for ref in refs
         if not ref.get("remote")
         and any(target in distances for target in ref["targets"])
@@ -44,18 +45,20 @@ def select_remotes(refs, distances):
         for ref in refs
         if ref.get("remote") not in (None, "git")
         and (
-            ref["name"] in local_names
+            ref["name"] in local_distances
             or any(target in distances for target in ref["targets"])
         )
     ]
+    def distance(ref):
+        candidates = [distances[target] for target in ref["targets"]
+                      if target in distances]
+        if ref["name"] in local_distances:
+            candidates.append(local_distances[ref["name"]])
+        return min(candidates)
+
     return sorted(
         selected,
-        key=lambda ref: (
-            min((distances.get(t, float("inf")) for t in ref["targets"]),
-                default=float("inf")),
-            ref["name"],
-            ref["remote"],
-        ),
+        key=lambda ref: (distance(ref), ref["name"], ref["remote"]),
     )
 
 
@@ -98,6 +101,7 @@ def wrap_entries(entries, width):
 
 def main():
     depth = max(0, int(os.environ.get("JJ_STARSHIP_ANCESTOR_BOOKMARK_DEPTH", "10")))
+    limit = max(0, int(os.environ.get("JJ_STARSHIP_REMOTE_BOOKMARK_LIMIT", "3")))
     graph = [line.split() for line in jj(
         "log", "--no-graph", "-r", f"ancestors(@, {depth + 1})",
         "-T", 'commit_id ++ " " ++ parents.map(|p| p.commit_id()).join(" ") ++ "\\n"',
@@ -114,7 +118,7 @@ def main():
         "bookmark", "list", "--all-remotes", "-T", template,
     ).splitlines()]
     entries = []
-    for ref in select_remotes(refs, distances):
+    for ref in select_remotes(refs, distances)[:limit]:
         name = f'{ref["name"]}@{ref["remote"]}'
         if ref["conflict"]:
             suffix = "!"

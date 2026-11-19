@@ -2,3 +2,4 @@ fish_variables
 .env
 .env.local
 result
+*.pyc

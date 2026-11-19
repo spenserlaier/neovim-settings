@@ -34,6 +34,16 @@ class RemotePromptTest(unittest.TestCase):
                             for line in output.splitlines()))
         self.assertEqual(prompt.wrap_entries([], 35), "")
 
+    def test_nearest_remote_uses_local_counterpart_for_divergence(self):
+        refs = [
+            {"name": "topic", "remote": None, "targets": ["wc"]},
+            {"name": "topic", "remote": "origin", "targets": ["other"]},
+            {"name": "older", "remote": "origin", "targets": ["parent"]},
+        ]
+        self.assertEqual([ref["name"] for ref in
+                          prompt.select_remotes(refs, {"wc": 0, "parent": 1})],
+                         ["topic", "older"])
+
     def test_real_remote_refs(self):
         with tempfile.TemporaryDirectory(prefix="jj-remote-test-") as temporary:
             directory = Path(temporary) / "repo"
@@ -83,11 +93,15 @@ class RemotePromptTest(unittest.TestCase):
             output = run("python3", str(SOURCE))
             self.assertIn("feature@origin↑1", output)
             self.assertIn("diverged@origin↔↑1↓1", output)
-            self.assertIn("remote-only@origin~1", output)
             self.assertIn("synced@origin", output)
             self.assertNotIn("synced@origin~", output)
+            self.assertNotIn("remote-only", output)
             self.assertNotIn("unrelated", output)
             self.assertNotIn("@git", output)
+            env["JJ_STARSHIP_REMOTE_BOOKMARK_LIMIT"] = "1"
+            self.assertEqual(run("python3", str(SOURCE)),
+                             "remote diverged@origin↔↑1↓1")
+            env.pop("JJ_STARSHIP_REMOTE_BOOKMARK_LIMIT")
             if shutil.which("starship"):
                 rendered = run("starship", "module", "custom.jj_remote")
                 self.assertIn("remote ", rendered)
