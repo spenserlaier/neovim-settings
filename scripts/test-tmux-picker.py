@@ -32,11 +32,11 @@ def check():
             ROOT / "fish/tmux-window-colors.fish")
         (config_dir / "tmux-window-hints.fish").symlink_to(
             ROOT / "fish/tmux-window-hints.fish")
-        real_menu = directory / "real-menu"
+        real_jump = directory / "real-jump"
         env = dict(os.environ, HOME=str(directory),
                    PATH=f"{directory}:{os.environ['PATH']}",
                    PICKER_LOG=str(log), PICKER_ROWS=str(rows), PICKER_QUERY="",
-                   PICKER_REAL_MENU_FILE=str(real_menu),
+                   PICKER_REAL_JUMP_FILE=str(real_jump),
                    PICKER_ACTION_FILE=str(directory / 'action'), FZF_DEFAULT_OPTS="")
         env.pop("TMUX", None)
         env.pop("TMUX_PANE", None)
@@ -49,10 +49,11 @@ def check():
         (directory / "tmux").write_text(f'''#!/usr/bin/env python3
 import json, os, subprocess, sys
 args = sys.argv[1:]
-if args[0] in ('attach-session', 'switch-client', 'select-window', 'display-menu'):
+if args[0] in ('attach-session', 'switch-client', 'select-window', 'display-popup'):
     with open(os.environ['PICKER_LOG'], 'a') as f:
         f.write(json.dumps(args) + '\\n')
-    if args[0] == 'display-menu' and os.path.exists(os.environ['PICKER_REAL_MENU_FILE']):
+    if os.path.exists(os.environ['PICKER_REAL_JUMP_FILE']) and (
+        args[0] == 'select-window' or (args[0] == 'switch-client' and '-T' in args)):
         sys.exit(subprocess.call([{TMUX!r}, '-S', {socket!r}, *args]))
 else:
     sys.exit(subprocess.call([{TMUX!r}, '-S', {socket!r}, *args]))
@@ -161,79 +162,100 @@ if result.stdout:
                          "#{window_id}", "-n", "third", "sleep 120")
             assert tmux("display-message", "-p", "-t", third,
                         "#{@window_accent}").startswith("#")
-            subprocess.run(["fish", "--no-config", str(ROOT / "fish/tmux-window-hints.fish"),
-                            sid], env=env, check=True)
-            menu = json.loads(log.read_text().splitlines()[-1])
-            assert menu[:6] == ["display-menu", "-T", "Jump to window", "-x", "C", "-y"], menu
-            assert "a" in menu and "s" in menu and "d" in menu, menu
-            assert f"select-window -t {wid}" in menu, menu
-            assert any("●" in item and "#[fg=#" in item for item in menu), menu
+            assert tmux("display-message", "-p", "-t", sid, "#{T:status-left}") == ""
+            named_label = tmux("display-message", "-p", "-t", "=team app:", "#{T:status-left}")
+            assert named_label == "[team app]", named_label
+            jump_bindings = tmux("list-keys", "-T", "window-jump")
+            assert "Escape" in jump_bindings and "Any" in jump_bindings, jump_bindings
 
-            # An attached client must actually show the menu and jump on one key.
+            # A real client shows aligned hints and returns to two rows when Jump ends.
             second = tmux("display-message", "-p", "-t", f"{sid}:1", "#{window_id}")
-            real_menu.touch()
+            real_jump.touch()
             pid, terminal = pty.fork()
             if pid == 0:
                 os.execve(TMUX, [TMUX, "-S", socket, "attach-session", "-t", sid], env)
+
+            def wait_for(get_value, expected):
+                for _ in range(100):
+                    value = get_value()
+                    if value == expected:
+                        return
+                    time.sleep(0.02)
+                assert value == expected, (value, expected, tmux("show-messages"))
+
+            def status_height():
+                return tmux("show-options", "-Av", "-t", sid, "status")
+
+            def key_table():
+                return tmux("list-clients", "-F", "#{client_key_table}")
+
+            def start_jump():
+                os.write(terminal, b"\x01 ")
+                wait_for(key_table, "window-jump")
+                wait_for(status_height, "3")
+
+            def close_jump(key):
+                os.write(terminal, key)
+                wait_for(key_table, "root")
+                wait_for(status_height, "2")
+
             try:
                 fcntl.ioctl(terminal, termios.TIOCSWINSZ,
                             struct.pack("HHHH", 30, 120, 0, 0))
-                for _ in range(50):
-                    if tmux("list-clients", "-F", "#{session_id}") == sid:
-                        break
-                    time.sleep(0.02)
-                if select.select([terminal], [], [], 1)[0]:
-                    os.read(terminal, 65536)
+                wait_for(lambda: tmux("list-clients", "-F", "#{session_id}"), sid)
                 client_tty = tmux("list-clients", "-F", "#{client_tty}")
-                menu_process = subprocess.Popen(
-                    ["fish", "--no-config", str(ROOT / "fish/tmux-window-hints.fish"),
-                     sid, client_tty], env=env, stderr=subprocess.PIPE)
+                start_jump()
                 output = b""
                 deadline = time.monotonic() + 3
-                while b"Jump to window" not in output and time.monotonic() < deadline:
+                while b"[s]" not in output and time.monotonic() < deadline:
                     if select.select([terminal], [], [], 0.1)[0]:
                         output += os.read(terminal, 65536)
-                assert b"Jump to window" in output, (
-                    output[-500:], log.read_text().splitlines()[-1],
-                    tmux("list-clients", "-F", "#{client_key_table}"),
-                    tmux("show-messages"))
-                os.write(terminal, b"s")
-                assert menu_process.wait(timeout=3) == 0, menu_process.stderr.read()
-                for _ in range(50):
-                    if tmux("display-message", "-p", "-t", sid,
-                            "#{window_id}") == second:
-                        break
-                    time.sleep(0.02)
-                assert tmux("display-message", "-p", "-t", sid,
-                            "#{window_id}") == second
-                if select.select([terminal], [], [], 0.1)[0]:
-                    os.read(terminal, 65536)
-                os.write(terminal, b"\x01")
-                time.sleep(0.05)
-                assert tmux("list-clients", "-F", "#{client_key_table}") == "prefix"
-                os.write(terminal, b" ")
-                output = b""
-                deadline = time.monotonic() + 3
-                while b"Jump to window" not in output and time.monotonic() < deadline:
-                    if select.select([terminal], [], [], 0.1)[0]:
-                        output += os.read(terminal, 65536)
-                assert b"Jump to window" in output, (
-                    output[-500:], log.read_text().splitlines()[-1],
-                    tmux("list-clients", "-F", "#{client_key_table}"),
-                    tmux("show-messages"))
-                os.write(terminal, b"a")
-                for _ in range(50):
-                    if tmux("display-message", "-p", "-t", sid,
-                            "#{window_id}") == wid:
-                        break
-                    time.sleep(0.02)
-                assert tmux("display-message", "-p", "-t", sid,
-                            "#{window_id}") == wid
+                assert all(hint in output for hint in (b"[a]", b"[s]", b"[d]")), (
+                    output[-1000:], tmux("show-options", "-t", sid),
+                    tmux("display-message", "-p", "-c", client_tty,
+                         "#{W:#{window_id}:#{@jump_targets}:#{E:@status_jump_key} }"))
+                expanded = tmux("display-message", "-p", "-c", client_tty, "#{E:status-format[1]}")
+                assert "fill=#45475a" in expanded, expanded
+                close_jump(b"s")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), second)
+
+                start_jump()
+                close_jump(b"\x1b")
+                assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == second
+                expanded = tmux("display-message", "-p", "-c", client_tty, "#{E:status-format[1]}")
+                assert "fill=#45475a" not in expanded, expanded
+
+                start_jump()
+                close_jump(b"o")
+                wait_for(lambda: json.loads(log.read_text().splitlines()[-1])[0], "display-popup")
+                popup = json.loads(log.read_text().splitlines()[-1])
+                assert popup[:5] == ["display-popup", "-c", client_tty, "-t", f"{sid}:"]
+                assert "--windows" in popup[-1]
+
+                start_jump()
+                close_jump(b"a")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), wid)
+
+                start_jump()
+                close_jump(b"q")
+                assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == wid
+
+                start_jump()
+                tmux("switch-client", "-c", client_tty, "-t", "=team app")
+                wait_for(status_height, "2")
+                wait_for(key_table, "root")
+                tmux("switch-client", "-c", client_tty, "-t", sid)
+
+                start_jump()
+                tmux("detach-client", "-t", client_tty)
+                wait_for(status_height, "2")
+                wait_for(lambda: tmux("show-options", "-qv", "-t", sid, "@jump_client"), "")
             finally:
-                os.kill(pid, signal.SIGTERM)
-                os.waitpid(pid, 0)
+                if not os.waitpid(pid, os.WNOHANG)[0]:
+                    os.kill(pid, signal.SIGTERM)
+                    os.waitpid(pid, 0)
                 os.close(terminal)
-                real_menu.unlink()
+                real_jump.unlink()
 
             # Confirmation rejects no, Escape, uppercase Y, Enter, and EOF.
             before = log.read_text()
@@ -260,7 +282,7 @@ if result.stdout:
             assert 'last session; you will leave tmux' in output
             result = subprocess.run([TMUX, '-S', socket, 'list-sessions'], capture_output=True)
             assert result.returncode != 0
-            print("Verified previews, labels, selection, confirmation cancellation, deletion, list refresh, current-session handoff, last-session warning, and config.")
+            print("Verified previews, labels, selection, confirmation cancellation, deletion, list refresh, current-session handoff, last-session warning, and Quick Jump.")
         finally:
             subprocess.run([TMUX, "-S", socket, "kill-server"], capture_output=True)
 
