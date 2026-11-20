@@ -149,7 +149,8 @@ The preview moves below the list in narrow popups; `Ctrl-/` toggles it.
 Previews capture terminal contents when the selection changes, without sending
 input to the process. They do not continuously refresh or combine split panes.
 
-In the session picker, `Ctrl-x` requests deletion of the highlighted session.
+In the session picker, press Escape for normal mode, then `dd` to request
+deletion of the highlighted session.
 The confirmation names the session and directory, shows its window count, and
 warns that all its processes will terminate. Only lowercase `y` confirms;
 Escape, any other key, or end-of-input cancels. The list refreshes afterward

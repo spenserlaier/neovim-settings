@@ -63,7 +63,7 @@ import os, subprocess, sys
 data = sys.stdin.read()
 with open(os.environ['PICKER_ROWS'], 'w') as f:
     f.write(data)
-args = [arg for arg in sys.argv[1:] if arg not in ('--expect=ctrl-x', '--print-query')]
+args = [arg for arg in sys.argv[1:] if arg != '--print-query']
 action = ''
 if os.environ.get('PICKER_DELETE'):
     from pathlib import Path
@@ -71,16 +71,17 @@ if os.environ.get('PICKER_DELETE'):
     if marker.exists():
         sys.exit(130)
     marker.touch()
-    action = 'ctrl-x'
+    action = 'delete'
 result = subprocess.run([{FZF!r}, *args, '--filter', os.environ['PICKER_QUERY']],
                         input=data, text=True, capture_output=True)
 if result.returncode not in (0, 1):
     sys.stderr.write(result.stderr)
     sys.exit(result.returncode)
 if result.stdout:
-    if '--expect=ctrl-x' in sys.argv:
+    if '--print-query' in sys.argv:
         print(os.environ['PICKER_QUERY'])
-        print(action)
+        if action:
+            print(action)
     print(result.stdout.splitlines()[0])
 ''')
         for name in ("tmux", "fzf"):

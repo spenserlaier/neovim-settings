@@ -35,8 +35,21 @@ if test "$mode" = --sessions
     set session_format "#{session_id}$tab#{?#{m/r:^[0-9]+\$,#{session_name}},#{b:session_path} (session #{session_name}),#{session_name}} | #{pane_current_path} | #{session_windows} windows#{?session_attached, [attached],}"
     set preview_command "fish $preview_script --preview-session {1}"
     set prompt 'Session> '
-    set header 'Enter: switch · Ctrl-x: kill session (confirm) · Ctrl-/: preview'
-    set picker_options --expect=ctrl-x --print-query
+    set header 'Enter: switch · Esc then dd: delete · Ctrl-/: preview'
+    # fzf binds individual keys. Reapplying the header marks the first normal-mode d
+    # in FZF_ACTION, leaving the query intact and letting intervening actions reset it.
+    set picker_options --print-query --with-shell='sh -c' \
+        --bind 'd:transform[
+            if test "$FZF_INPUT_STATE" != hidden; then
+                echo "put(d)"
+            elif test "$FZF_MATCH_COUNT" -gt 0; then
+                if test "$FZF_ACTION" = change-header; then
+                    echo "print(delete)+accept-non-empty"
+                else
+                    printf "change-header(%s)\n" "$TMUX_PICKER_HEADER"
+                fi
+            fi
+        ]'
 else if test "$mode" = --windows
     # Resolve the session now, so previewing cannot change the search scope.
     set session_id (tmux display-message -p '#{session_id}')
@@ -55,6 +68,7 @@ else
     exit 1
 end
 
+set -lx TMUX_PICKER_HEADER "$header"
 set query ''
 while true
     if test "$mode" = --sessions
@@ -73,13 +87,13 @@ while true
         end
         exit $status
     end
-    # --print-query and --expect emit query, key (empty for Enter), then row.
-    if test (count $selected) -lt 3
+    # fzf emits the query, an optional delete marker, and the selected row.
+    if test (count $selected) -lt 2
         exit 0
     end
     set query "$selected[1]"
-    set target (string split -f 1 "$tab" -- "$selected[3]")
-    if test "$selected[2]" = ctrl-x
+    set target (string split -f 1 "$tab" -- "$selected[-1]")
+    if test (count $selected) -eq 3; and test "$selected[2]" = delete
         set description (tmux display-message -p -t "$target:" '#{session_name} — #{session_path} (#{session_windows} windows)' 2>/dev/null)
         or continue
         set sessions (tmux list-sessions -F '#{session_id}')
