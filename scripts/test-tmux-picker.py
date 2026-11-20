@@ -159,7 +159,7 @@ if result.stdout:
             picker("--windows")
             assert "\x1b[" in rows.read_text() and "●" in rows.read_text()
             third = tmux("new-window", "-d", "-t", sid, "-P", "-F",
-                         "#{window_id}", "-n", "third", "sleep 120")
+                         "#{window_id}", "-n", "third", "-c", str(directory), "sleep 120")
             assert tmux("display-message", "-p", "-t", third,
                         "#{@window_accent}").startswith("#")
             assert tmux("display-message", "-p", "-t", sid, "#{T:status-left}") == ""
@@ -170,6 +170,10 @@ if result.stdout:
 
             # A real client shows aligned hints and returns to two rows when Jump ends.
             second = tmux("display-message", "-p", "-t", f"{sid}:1", "#{window_id}")
+            for index, label in enumerate(("git diff", "nix build", "cargo test")):
+                target = f"{sid}:{index}"
+                tmux("rename-window", "-t", target, "fish")
+                tmux("set-option", "-p", "-t", target, "@last_shell_command", label)
             real_jump.touch()
             pid, terminal = pty.fork()
             if pid == 0:
@@ -181,7 +185,7 @@ if result.stdout:
                     if value == expected:
                         return
                     time.sleep(0.02)
-                assert value == expected, (value, expected, tmux("show-messages"))
+                assert value == expected, (value, expected, tmux("show-messages").splitlines()[:20])
 
             def status_height():
                 return tmux("show-options", "-Av", "-t", sid, "status")
@@ -207,19 +211,25 @@ if result.stdout:
                 start_jump()
                 output = b""
                 deadline = time.monotonic() + 3
-                while b"[s]" not in output and time.monotonic() < deadline:
+                while b"[d]" not in output and time.monotonic() < deadline:
                     if select.select([terminal], [], [], 0.1)[0]:
                         output += os.read(terminal, 65536)
-                assert all(hint in output for hint in (b"[a]", b"[s]", b"[d]")), (
+                assert all(hint in output for hint in (b"[a] git diff", b"[s] nix build", b"[d]")), (
                     output[-1000:], tmux("show-options", "-t", sid),
                     tmux("display-message", "-p", "-c", client_tty,
                          "#{W:#{window_id}:#{@jump_targets}:#{E:@status_jump_key} }"))
+                assert b"cargo test" not in output
                 expanded = tmux("display-message", "-p", "-c", client_tty, "#{E:status-format[1]}")
                 assert "fill=#45475a" in expanded, expanded
+                assert "git diff" not in expanded and "nix build" not in expanded, expanded
                 close_jump(b"s")
                 wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), second)
 
+                tmux("set-option", "-p", "-t", f"{sid}:0", "@last_shell_command", "ls")
+                tmux("set-option", "-p", "-t", f"{sid}:0", "@last_shell_fallback", "pwd")
                 start_jump()
+                jump_row = tmux("display-message", "-p", "-c", client_tty, "#{E:status-format[2]}")
+                assert "[a] ls" in jump_row and "[s] nix build" in jump_row, jump_row
                 close_jump(b"\x1b")
                 assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == second
                 expanded = tmux("display-message", "-p", "-c", client_tty, "#{E:status-format[1]}")
@@ -240,12 +250,36 @@ if result.stdout:
                 close_jump(b"q")
                 assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == wid
 
+                # The bar recovers even when no Jump key binding runs.
+                start_jump()
+                tmux("switch-client", "-c", client_tty, "-T", "root")
+                wait_for(status_height, "2")
+                start_jump()
+                close_jump(b"\x1b")
+
+                start_jump()
+                tmux("switch-client", "-c", client_tty, "-T", "root")
+                start_jump()
+                time.sleep(0.45)
+                assert key_table() == "window-jump" and status_height() == "3"
+                close_jump(b"\x1b")
+
+                # A stale owner from a previous configuration must never block entry.
+                tmux("set-option", "-t", sid, "@jump_client", client_tty, ";",
+                     "set-option", "-t", sid, "@jump_previous_status", "inherit", ";",
+                     "set-option", "-t", sid, "@jump_targets", f" {wid}/a ", ";",
+                     "set-option", "-t", sid, "status", "3")
+                start_jump()
+                close_jump(b"\x1b")
+
                 start_jump()
                 tmux("switch-client", "-c", client_tty, "-t", "=team app")
                 wait_for(status_height, "2")
                 wait_for(key_table, "root")
                 tmux("switch-client", "-c", client_tty, "-t", sid)
 
+                # Jump also works when no windows share both a name and a directory.
+                tmux("rename-window", "-t", f"{sid}:1", "second")
                 start_jump()
                 tmux("detach-client", "-t", client_tty)
                 wait_for(status_height, "2")

@@ -160,6 +160,37 @@ function __tmux_sessionizer
     commandline -f repaint
 end
 
+function __tmux_note_command --on-event fish_postexec
+    if not set -q TMUX[1] TMUX_PANE[1]; or test -z "$TMUX_PANE"; or set -q fish_private_mode
+        return
+    end
+
+    # Tokenize without evaluating the command. Retain only names and known subcommands.
+    set -l words
+    printf '%s\n' "$argv[1]" | read --tokenize --array words
+    while contains -- "$words[1]" command builtin exec time env sudo
+        set -e words[1]
+    end
+    if string match -q '*=*' -- "$words[1]"
+        return
+    end
+    set -l program (string replace -r '^.*/' '' -- "$words[1]")
+    if not string match -qr '^[a-zA-Z0-9_.][a-zA-Z0-9_.+-]*$' -- "$program"
+        return
+    end
+    set -l label "$program"
+    switch "$program:$words[2]"
+        case git:diff git:log git:status git:add git:commit git:push git:pull git:fetch git:switch git:rebase \
+            jj:diff jj:log jj:status jj:describe jj:new jj:edit jj:rebase jj:git \
+            nix:build nix:develop nix:run nix:flake nix:fmt nix:eval \
+            cargo:build cargo:check cargo:run cargo:test \
+            npm:run npm:test npm:install pnpm:run pnpm:test pnpm:install \
+            uv:run uv:sync uv:pip
+            set label "$program $words[2]"
+    end
+    command tmux set-option -qp -t "$TMUX_PANE" @last_shell_command "$label" 2>/dev/null
+end
+
 # Match the tmux prefix shortcuts when starting from a plain Fish shell.
 for mode in insert default
     bind -M $mode \caf '__tmux_sessionizer --sessions'

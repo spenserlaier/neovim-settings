@@ -132,6 +132,11 @@ and `r` reloads the tmux configuration.
 `Space` enters Quick Jump. The directory row becomes lighter and a temporary
 third row shows letters for the current session's first sixteen windows. Press
 a letter to jump, Escape to cancel, or `o` to open the full window picker.
+When windows share a name and working directory, their letters can include the
+active pane's most recently completed Fish command. Labels show the command
+name and a recognized subcommand, such as `git diff`.
+Fish shells that were already running when this was installed can use `exec fish`
+at the prompt to start recording labels in the same pane.
 `n` and `p` repeat after one prefix press, and `l` returns to the last window.
 Each window receives a stable accent from its tmux window ID. The accent appears
 in the regular window list, in the picker, and on the active pane border when
