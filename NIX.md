@@ -131,7 +131,8 @@ the directory. Plain `tmux`/`new-session` creation can still assign numeric name
 and `r` reloads the tmux configuration.
 `Space` enters Quick Jump. The directory row becomes lighter and a temporary
 third row shows letters for the current session's first sixteen windows. Press
-a letter to jump, Escape to cancel, or `o` to open the full window picker.
+a letter or a single-digit window index (`0`–`9`) to jump. Escape cancels, and
+`o` opens the full window picker.
 When windows share a name and working directory, their letters can include the
 active pane's most recently completed Fish command. Labels show the command
 name and a recognized subcommand, such as `git diff`.

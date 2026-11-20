@@ -246,6 +246,24 @@ if result.stdout:
                 close_jump(b"a")
                 wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), wid)
 
+                tmux("move-window", "-d", "-s", third, "-t", f"{sid}:7")
+                start_jump()
+                close_jump(b"7")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), third)
+                start_jump()
+                close_jump(b"2")
+                assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == third
+
+                # The normal numeric binding still works and higher indexes still have letters.
+                os.write(terminal, b"\x010")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), wid)
+                tmux("move-window", "-d", "-s", third, "-t", f"{sid}:10")
+                start_jump()
+                close_jump(b"d")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), third)
+                os.write(terminal, b"\x010")
+                wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), wid)
+
                 start_jump()
                 close_jump(b"q")
                 assert tmux("display-message", "-p", "-t", sid, "#{window_id}") == wid

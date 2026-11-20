@@ -2,10 +2,11 @@
 
 set action "$argv[1]"
 set hints a s d f g h j k l z x c v b n m
+set digits 0 1 2 3 4 5 6 7 8 9
 
 if test "$action" = bind
     set bindings
-    for key in $hints
+    for key in $hints $digits
         set -a bindings bind-key -T window-jump "$key" run-shell \
             "fish ~/.config/fish/tmux-window-hints.fish $key #{q:session_id} #{q:client_name} #{q:@jump_token} #{q:@jump_targets}" ';'
     end
@@ -74,20 +75,24 @@ end
 if test "$action" = start
     clear_inactive_jump "$session"
     # Quote each identity field, including literal newlines in directory names.
-    set identity_format '#{window_id} #{q:window_name} #{s!'\n'!\\\\n!:#{q:pane_current_path}}'
+    set identity_format '#{window_id} #{window_index} #{q:window_name} #{s!'\n'!\\\\n!:#{q:pane_current_path}}'
     set rows (tmux list-windows -t "$session" -F "$identity_format")
     set windows
     set identities
     set seen
     set duplicates
+    set targets
     for row in $rows
-        set fields (string split -m 1 ' ' -- "$row")
+        set fields (string split -m 2 ' ' -- "$row")
         set -a windows "$fields[1]"
-        set -a identities "$fields[2]"
-        if contains -- "$fields[2]" $seen
-            set -a duplicates "$fields[2]"
+        set -a identities "$fields[3]"
+        if contains -- "$fields[3]" $seen
+            set -a duplicates "$fields[3]"
         end
-        set -a seen "$fields[2]"
+        set -a seen "$fields[3]"
+        if contains -- "$fields[2]" $digits
+            set -a targets "$fields[1]/$fields[2]"
+        end
     end
     if not set -q windows[1]
         exit 0
@@ -96,7 +101,6 @@ if test "$action" = start
     if test -z "$previous"
         set previous inherit
     end
-    set targets
     set command_windows
     for index in (seq (math "min("(count $windows)", "(count $hints)")"))
         set -a targets "$windows[$index]/$hints[$index]"
@@ -127,7 +131,7 @@ finish_jump "$session" "$token"
 if test "$action" = picker
     tmux display-popup -c "$client" -t "$session:" -E -w 90% -h 90% \
         'fish ~/.config/fish/tmux-picker.fish --windows'
-else if contains -- "$action" $hints
+else if contains -- "$action" $hints $digits
     set target (string match -r " (@[0-9]+)/$action " -- "$argv[5]")[2]
     if test -n "$target"
         tmux select-window -t "$session:$target"
