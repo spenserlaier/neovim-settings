@@ -160,9 +160,27 @@ function __tmux_sessionizer
     commandline -f repaint
 end
 
+function __tmux_foreground_command --argument-names line
+    # A trailing ampersand backgrounds the command when it has an even number of preceding backslashes.
+    not string match -qr '(^|[^\\\\])(?:\\\\\\\\)*&\s*$' -- "$line"
+end
+
+function __tmux_task_start --on-event fish_preexec
+    if not set -q TMUX[1] TMUX_PANE[1]; or set -q fish_private_mode
+        return
+    end
+    if __tmux_foreground_command "$argv[1]"
+        "$__fish_config_dir/../tmux/task-indicator" task-start
+    end
+end
+
 function __tmux_note_command --on-event fish_postexec
+    set -l command_status $status
     if not set -q TMUX[1] TMUX_PANE[1]; or test -z "$TMUX_PANE"; or set -q fish_private_mode
         return
+    end
+    if __tmux_foreground_command "$argv[1]"
+        "$__fish_config_dir/../tmux/task-indicator" task-end "$command_status"
     end
 
     # Tokenize without evaluating the command. Retain only names and known subcommands.

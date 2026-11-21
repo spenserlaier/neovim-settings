@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 
 {
-  imports = [ ./fonts.nix ./opencode.nix ];
+  imports = [ ./fonts.nix ./opencode.nix ./tmux-task-indicator.nix ];
 
   # Keep this at the version used for the first Home Manager activation.
   home.stateVersion = "26.05";
@@ -34,7 +34,7 @@
     carapace
     clang
     clang-tools
-    codex
+    (callPackage ./codex-package.nix { })
     delta
     eza
     fd

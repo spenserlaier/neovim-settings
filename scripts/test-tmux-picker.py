@@ -32,6 +32,10 @@ def check():
             ROOT / "fish/tmux-window-colors.fish")
         (config_dir / "tmux-window-hints.fish").symlink_to(
             ROOT / "fish/tmux-window-hints.fish")
+        indicator = config_dir.parent / "tmux" / "task-indicator"
+        indicator.parent.mkdir()
+        indicator.write_text("#!/bin/sh\n" + (ROOT / "scripts/tmux-task-indicator.sh").read_text())
+        indicator.chmod(0o755)
         real_jump = directory / "real-jump"
         env = dict(os.environ, HOME=str(directory),
                    PATH=f"{directory}:{os.environ['PATH']}",
@@ -208,6 +212,29 @@ if result.stdout:
                             struct.pack("HHHH", 30, 120, 0, 0))
                 wait_for(lambda: tmux("list-clients", "-F", "#{session_id}"), sid)
                 client_tty = tmux("list-clients", "-F", "#{client_tty}")
+
+                def task(*args):
+                    pane = tmux("display-message", "-p", "-t", second, "#{pane_id}")
+                    subprocess.run([str(indicator), *args], env=dict(env, TMUX_PANE=pane), check=True)
+
+                def icon():
+                    return tmux("display-message", "-p", "-t", second, "#{E:@status_task_icon}")
+
+                task("task-start")
+                assert icon() == "◐"
+                task("task-end", "1")
+                assert icon() == "!"
+                task("agent-idle")
+                assert icon() == "●"
+                task("agent-start")
+                assert icon() == "◐"
+                task("agent-waiting")
+                assert icon() == "?"
+                task("agent-working")
+                assert icon() == "◐"
+                task("agent-done")
+                assert icon() == "✓"
+
                 start_jump()
                 output = b""
                 deadline = time.monotonic() + 3
@@ -224,6 +251,11 @@ if result.stdout:
                 assert "git diff" not in expanded and "nix build" not in expanded, expanded
                 close_jump(b"s")
                 wait_for(lambda: tmux("display-message", "-p", "-t", sid, "#{window_id}"), second)
+                wait_for(icon, "●")
+                task("agent-start")
+                task("agent-done")
+                assert icon() == "●"
+                task("agent-exit")
 
                 tmux("set-option", "-p", "-t", f"{sid}:0", "@last_shell_command", "ls")
                 tmux("set-option", "-p", "-t", f"{sid}:0", "@last_shell_fallback", "pwd")

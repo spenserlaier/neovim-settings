@@ -143,6 +143,19 @@ Each window receives a stable accent from its tmux window ID. The accent appears
 in the regular window list, in the picker, and on the active pane border when
 the window is split. Colors repeat after eight windows.
 
+The status bar uses the colored window marker to show task state. `●` means
+idle, `◐` means working, `?` means an agent is waiting for input, `✓` means
+finished, and `!` means failed. A completion in another window stays visible
+until you visit it. Fish tracks foreground commands. Codex and Claude Code
+report their own turn state while their CLI remains open.
+
+Home Manager installs the agent hooks in `~/.codex/hooks.json` and
+`~/.claude/settings.json`. Review and trust the Codex hooks from `/hooks` in the
+Codex CLI. Claude Code runs hooks from the user settings
+after you accept its workspace trust prompt. Use `/hooks` there to inspect
+the configured hooks. Both agents use the tmux pane inherited by their CLI
+when launched from inside tmux.
+
 Outside tmux, Fish also accepts `Ctrl-a`, `f` to attach to an existing session,
 and `Ctrl-a`, `Shift-f` to choose a project directory before creating or
 attaching to its session. Both shortcuts work in insert and normal mode.
@@ -170,8 +183,9 @@ Ranger configuration into `~/.config/ranger`.
 Home Manager links the repository's Kitty configuration into `~/.config/kitty`.
 On Linux, install Kitty through the host package manager (`sudo dnf install kitty`
 on Fedora) so it uses the host graphics stack. Thunderbird is installed by Home
-Manager on Linux. Kitty and Thunderbird use the optional Homebrew layer on macOS. Codex CLI is installed by Home Manager on both platforms;
-its version follows the pinned Nixpkgs input. Run `codex` to sign in after
+Manager on Linux. Kitty and Thunderbird use the optional Homebrew layer on
+macOS. Home Manager installs the Codex CLI on both platforms using the OpenAI
+release pinned in `home/codex-package.nix`. Run `codex` to sign in after
 activation. Home Manager
 installs CaskaydiaCove Nerd Font, FiraCode Nerd Font, and Noto Sans Symbols 2
 through `home/fonts.nix`. On macOS its native font module copies them into
