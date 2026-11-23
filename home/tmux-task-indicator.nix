@@ -41,6 +41,11 @@ in
   };
 
   home.file.".claude/settings.json".text = builtins.toJSON {
+    enabledPlugins = {
+      "pyright-lsp@claude-plugins-official" = true;
+      "typescript-lsp@claude-plugins-official" = true;
+    };
+    editorMode = "vim";
     hooks = {
       SessionStart = claudeHook "agent-idle";
       UserPromptSubmit = claudeHook "agent-start";
