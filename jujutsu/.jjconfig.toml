@@ -3,6 +3,12 @@
 recent = ["log", "-r", "bookmarks()", "-n", "10"]
 # Show the current change's full ancestry and descendants.
 hist = ["log", "-r", "::@ | @::"]
+# Show workspace stacks with their immediate base commits.
+stacks = ["log", "-r", "workspace_changes() | parents(workspace_changes())"]
+
+[revset-aliases]
+# Keep every workspace tip, even when it is already in trunk history.
+'workspace_changes()' = 'working_copies() | coalesce(present(trunk()), root())..working_copies()'
 
 [user]
 name = "Spenser Laier"

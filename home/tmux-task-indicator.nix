@@ -11,6 +11,9 @@ let
     text = builtins.readFile ../scripts/tmux-task-indicator.sh;
   };
   indicatorCommand = lib.escapeShellArg "${config.xdg.configHome}/tmux/task-indicator";
+  codexStatus = pkgs.writeShellScript "tmux-codex-status" ''
+    exec ${pkgs.python3}/bin/python3 ${../scripts/codex-tmux.py} ${pkgs.tmux}/bin/tmux ${indicatorCommand} "$@"
+  '';
   hook = command: [
     {
       hooks = [
@@ -22,23 +25,12 @@ let
       ];
     }
   ];
-  codexHook = action: hook "${indicatorCommand} ${action} >/dev/null 2>&1; printf '%s\\n' '{}'";
   claudeHook = action: hook "${indicatorCommand} ${action} >/dev/null 2>&1 || :";
 in
 {
   xdg.configFile."tmux/task-indicator".source = "${indicator}/bin/tmux-task-indicator";
-
-  home.file.".codex/hooks.json".text = builtins.toJSON {
-    hooks = {
-      SessionStart = codexHook "agent-idle";
-      UserPromptSubmit = codexHook "agent-start";
-      PermissionRequest = codexHook "agent-waiting";
-      PostToolUse = codexHook "agent-working";
-      Stop = codexHook "agent-done";
-      Interrupt = codexHook "agent-idle";
-      SessionEnd = codexHook "agent-exit";
-    };
-  };
+  xdg.configFile."tmux/codex-status".source = codexStatus;
+  xdg.configFile."fish/functions/codex.fish".source = ../fish/functions/codex.fish;
 
   home.file.".claude/settings.json".text = builtins.toJSON {
     enabledPlugins = {

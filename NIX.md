@@ -86,6 +86,20 @@ Run `python3 scripts/test-jjr.py` to check hunk destinations, literal filenames,
 rename/deletion/binary handling, and filtered mode-switch selection using a
 temporary Jujutsu repository.
 
+`jj recent` shows up to ten bookmarked revisions. Use `jj stacks` to see the
+working-copy commits for all workspaces attached to the current repository,
+the changes leading to them outside trunk history, and their immediate bases.
+Jujutsu labels the working-copy commits as `name@` when there are multiple
+workspaces. Follow the graph down from a workspace to see which changes it
+builds on. Two arms meeting at a base show where the workspaces branched apart.
+
+Use `jj workspace list` for the corresponding directories. To start a new
+workspace stacked on a particular change, use
+`jj workspace add --name feature -r base-bookmark ../feature`, substituting a
+bookmark or change ID for `base-bookmark`. The new workspace starts on top of
+the selected change. Its ancestry stays there if you later move the base
+workspace to another change with `jj new` or `jj edit`.
+
 Starship uses the Nix-packaged `jj-starship` custom module for both Jujutsu and
 Git repositories. The built-in Git modules are disabled so colocated Jujutsu
 workspaces show one version-control segment. The package is pinned by this
@@ -153,17 +167,13 @@ finished, and `!` means failed. A completion in another window stays visible
 until you visit it. Fish tracks foreground commands. Codex and Claude Code
 report their own turn state while their CLI remains open.
 
-Home Manager installs the agent hooks in `~/.codex/hooks.json` and
-`~/.claude/settings.json`. Review and trust the Codex hooks from `/hooks` in the
-Codex CLI. Claude Code runs hooks from the user settings
-after you accept its workspace trust prompt. Use `/hooks` there to inspect
-the configured hooks. Claude hooks use the pane of their CLI process. The Codex
-shared daemon inherits the tmux pane where it first started. If that
-pane is gone and the indicator stops updating, exit Codex and run
-`codex app-server daemon restart` from the tmux pane you will use, then start
-Codex again. With multiple Codex panes at once, the daemon still shares one
-pane environment; `codex --no-daemon` is an optional workaround, but shared
-daemon commands cannot act on that isolated TUI session.
+Claude Code runs hooks from `~/.claude/settings.json` after you accept its
+workspace trust prompt. Use `/hooks` in Claude Code to inspect the hooks.
+In the managed Fish shell, `codex` reads the Codex UI's terminal status reports
+from its own tmux pane. It works with the shared daemon and with `--no-daemon`.
+It uses tmux's pane output pipe while Codex is open and leaves any existing
+pipe in place. If you activate this change with a Codex session open, resume
+that session from a fresh Fish shell to enable the indicator.
 
 Outside tmux, Fish also accepts `Ctrl-a`, `f` to attach to an existing session,
 and `Ctrl-a`, `Shift-f` to choose a project directory before creating or

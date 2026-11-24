@@ -6,10 +6,12 @@ import os
 from pathlib import Path
 import pty
 import select
+import shlex
 import shutil
 import signal
 import struct
 import subprocess
+import sys
 import tempfile
 import termios
 import time
@@ -20,7 +22,7 @@ TMUX = shutil.which("tmux")
 FZF = shutil.which("fzf")
 
 
-def check():
+def check(codex_only=False):
     with tempfile.TemporaryDirectory(prefix="tmux-picker-") as temporary:
         directory = Path(temporary)
         socket = str(directory / "socket")
@@ -172,6 +174,83 @@ if result.stdout:
             jump_bindings = tmux("list-keys", "-T", "window-jump")
             assert "Escape" in jump_bindings and "Any" in jump_bindings, jump_bindings
 
+            def wait_for(get_value, expected):
+                for _ in range(100):
+                    value = get_value()
+                    if value == expected:
+                        return
+                    time.sleep(0.02)
+                assert value == expected, (value, expected, tmux("show-messages").splitlines()[:20])
+
+            # Simulate the TUI's terminal reports with the daemon pane absent.
+            fake_codex = directory / "codex"
+            reports = r'''
+import sys
+import time
+
+for state in sys.stdin:
+    state = state.strip()
+    if state == "exit":
+        sys.exit(7)
+    # Split the OSC prefix across writes to exercise streaming detection.
+    print("\x1b]75", end="", flush=True)
+    time.sleep(0.05)
+    print(f"01;state={state}\x1b\\", end="", flush=True)
+'''
+            # Give tmux the same argv[0] it sees for the real Codex binary.
+            fake_codex.write_text(f'''#!/usr/bin/env python3
+import os
+import sys
+os.execv(sys.executable, ["codex", "-c", {reports!r}])
+''')
+            fake_codex.chmod(0o755)
+            status_reader = indicator.with_name("codex-status")
+            status_reader.write_text("#!/bin/sh\nexec " + shlex.join([
+                sys.executable,
+                str(ROOT / "scripts/codex-tmux.py"), TMUX, str(indicator),
+            ]) + ' "$@"\n')
+            status_reader.chmod(0o755)
+            function = shlex.quote(str(ROOT / "fish/functions/codex.fish"))
+            codex_pane = tmux("new-window", "-d", "-P", "-F", "#{pane_id}", "-t", sid,
+                              "env", f"PATH={env['PATH']}", f"XDG_CONFIG_HOME={config_dir.parent}",
+                              "fish", "--no-config", "-i")
+            tmux("send-keys", "-t", codex_pane, "-l",
+                 f"source {function}; codex; printf 'CODEX_EXIT=%s\\n' $status")
+            tmux("send-keys", "-t", codex_pane, "Enter")
+
+            def codex_icon():
+                return tmux("display-message", "-p", "-t", codex_pane, "#{E:@status_task_icon}")
+
+            def codex_pipe():
+                return tmux("display-message", "-p", "-t", codex_pane, "#{?pane_pipe,1,0}")
+
+            wait_for(codex_pipe, "1")
+            if sys.platform == "linux":
+                wait_for(lambda: tmux("display-message", "-p", "-t", codex_pane,
+                                      "#{pane_current_command}"), "codex")
+                wait_for(lambda: tmux("display-message", "-p", "-t", codex_pane,
+                                      "#{window_name}"), "codex")
+            for state, expected in (("idle:app=codex", "●"), ("working:app=codex", "◐"),
+                                    ("blocked:app=codex:kind=question", "?"),
+                                    ("done:app=codex", "✓")):
+                tmux("send-keys", "-t", codex_pane, state, "Enter")
+                try:
+                    wait_for(codex_icon, expected)
+                except AssertionError:
+                    raise AssertionError((state, codex_icon(), codex_pipe(),
+                                          tmux("capture-pane", "-p", "-t", codex_pane),
+                                          tmux("display-message", "-p", "-t", codex_pane,
+                                               "#{@agent_state}"))) from None
+            tmux("send-keys", "-t", codex_pane, "exit", "Enter")
+            wait_for(codex_pipe, "0")
+            wait_for(codex_icon, "●")
+            assert "CODEX_EXIT=7" in tmux("capture-pane", "-p", "-t", codex_pane)
+            tmux("kill-pane", "-t", codex_pane)
+
+            if codex_only:
+                print("Verified Codex terminal status.")
+                return
+
             # A real client shows aligned hints and returns to two rows when Jump ends.
             second = tmux("display-message", "-p", "-t", f"{sid}:1", "#{window_id}")
             for index, label in enumerate(("git diff", "nix build", "cargo test")):
@@ -182,14 +261,6 @@ if result.stdout:
             pid, terminal = pty.fork()
             if pid == 0:
                 os.execve(TMUX, [TMUX, "-S", socket, "attach-session", "-t", sid], env)
-
-            def wait_for(get_value, expected):
-                for _ in range(100):
-                    value = get_value()
-                    if value == expected:
-                        return
-                    time.sleep(0.02)
-                assert value == expected, (value, expected, tmux("show-messages").splitlines()[:20])
 
             def status_height():
                 return tmux("show-options", "-Av", "-t", sid, "status")
@@ -366,10 +437,10 @@ if result.stdout:
             assert 'last session; you will leave tmux' in output
             result = subprocess.run([TMUX, '-S', socket, 'list-sessions'], capture_output=True)
             assert result.returncode != 0
-            print("Verified previews, labels, selection, confirmation cancellation, deletion, list refresh, current-session handoff, last-session warning, and Quick Jump.")
+            print("Verified previews, labels, selection, confirmation cancellation, deletion, list refresh, current-session handoff, last-session warning, Quick Jump, and Codex terminal status.")
         finally:
             subprocess.run([TMUX, "-S", socket, "kill-server"], capture_output=True)
 
 
 if __name__ == "__main__":
-    check()
+    check(codex_only=sys.argv[1:] == ["--codex-only"])
