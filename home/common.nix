@@ -32,6 +32,9 @@
   home.packages = with pkgs; [
     bat
     carapace
+    (writeShellScriptBin "cheat-sheet" ''
+      exec ${python3}/bin/python3 ${../scripts/cheat-sheet.py} ${../tmux/common.conf} "$@"
+    '')
     clang
     clang-tools
     (callPackage ./codex-package.nix { })

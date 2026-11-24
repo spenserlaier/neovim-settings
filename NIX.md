@@ -139,6 +139,10 @@ name and a recognized subcommand, such as `git diff`.
 Fish shells that were already running when this was installed can use `exec fish`
 at the prompt to start recording labels in the same pane.
 `n` and `p` repeat after one prefix press, and `l` returns to the last window.
+Run `cheat-sheet` (or `cheat-sheet tmux`) for a short list of selected tmux
+shortcuts. Its `CHEAT_SHEET_ENTRY` annotations sit immediately above bindings in
+`tmux/common.conf`; the command reads the keys and prefix from that file, so
+changing a binding updates the displayed shortcut.
 Each window receives a stable accent from its tmux window ID. The accent appears
 in the regular window list, in the picker, and on the active pane border when
 the window is split. Colors repeat after eight windows.
@@ -153,8 +157,13 @@ Home Manager installs the agent hooks in `~/.codex/hooks.json` and
 `~/.claude/settings.json`. Review and trust the Codex hooks from `/hooks` in the
 Codex CLI. Claude Code runs hooks from the user settings
 after you accept its workspace trust prompt. Use `/hooks` there to inspect
-the configured hooks. Both agents use the tmux pane inherited by their CLI
-when launched from inside tmux.
+the configured hooks. Claude hooks use the pane of their CLI process. The Codex
+shared daemon inherits the tmux pane where it first started. If that
+pane is gone and the indicator stops updating, exit Codex and run
+`codex app-server daemon restart` from the tmux pane you will use, then start
+Codex again. With multiple Codex panes at once, the daemon still shares one
+pane environment; `codex --no-daemon` is an optional workaround, but shared
+daemon commands cannot act on that isolated TUI session.
 
 Outside tmux, Fish also accepts `Ctrl-a`, `f` to attach to an existing session,
 and `Ctrl-a`, `Shift-f` to choose a project directory before creating or
